@@ -1,6 +1,6 @@
 # Assist dApp Rest API
 
-To start, clone vouch-restapi-backend repo
+To start, clone assist-restapi-backend repo
 ```
 git clone https://github.com/tuum-tech/assist-restapi-backend.git;
 cd assist-restapi-backend;
