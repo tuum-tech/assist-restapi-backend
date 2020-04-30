@@ -19,15 +19,15 @@ pip install gunicorn
 ```
 pip install waitress
 ```
-4. Install SqlAlchemy
+4. Install PyMongo
 ```
-pip install sqlachemy
+pip install pymongo
 ```
 
 4. Create Database instance
 ```
 cd tools
-.\postgres.sh
+.\mongo.sh
 ```
 
 # Run the service

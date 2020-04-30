@@ -1,12 +1,12 @@
 import falcon
 import requests
 import json
-from .dbRepository import DbRepository
+from .mongoDatabase import MongoDatabase
 
 class VerifyTransaction:
     def on_get(self, req, resp):
         """Handles get requests"""
-        service = DbRepository()
         transactionId = req.get_param('transactionid', True)
-        response = service.verifyTransaction(transactionId)
+        database = MongoDatabase()
+        response = database.get_transaction(transactionId)
         resp.media = response
