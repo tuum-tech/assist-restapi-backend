@@ -24,7 +24,7 @@ pip install waitress
 pip install pymongo
 ```
 
-4. Create Database instance
+5. Create Database instance
 ```
 cd tools
 .\mongo.sh

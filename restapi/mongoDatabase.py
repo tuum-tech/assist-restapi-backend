@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 
 class TransactionStatus(object):
       PENDING = "Pending"
+      SENDING = "Sending transaction"
       WAITING_RESPONSE = "Waiting response"
       SUCCEDED = "Succeded"
       FAILED = "Failed"
@@ -41,7 +42,10 @@ class MongoDatabase:
       collection = self.__db[self.__TRANSACTIONS_COLLECTION]
       query = {"status": TransactionStatus.PENDING}
       response = collection.find(query)
+      # updatedValues = { "$set": { "status": TransactionStatus.SENDING, "lastUpdate": str( datetime.utcnow() ) } }
+      # collection.update_many(query, updatedValues)
       return response
+
 
    def update_transaction(self, transactionId, status):
       collection = self.__db[self.__TRANSACTIONS_COLLECTION]
