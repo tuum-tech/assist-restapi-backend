@@ -192,7 +192,7 @@ def create_raw_transaction(payload_string ):
     #sender_hashed_public_key = base58.b58decode_check(sender_address)[:21].encode("hex")
     sender_hashed_public_key = address_to_programhash(sender_address,False)
     #receiver_address = "EJrijXpAJmFmn6Xbjdh8TZgAYKS1KsK26N" 
-    did_string = "ii4ZCz8LYRHax3YB79SWJcMM2hjaHT35KN"
+    did_string = "did:elastos:ii4ZCz8LYRHax3YB79SWJcMM2hjaHT35KN#primary"
     did_hashed = address_to_programhash(did_string,False)
     print ("Did Hashed %s" % did_hashed)
 
