@@ -1,53 +1,54 @@
-# Assist dApp Rest API
+# Assistt Rest API
 
-To start, clone vouch-restapi-backend repo
+To start, clone assist-restapi-backend repo
 ```
 git clone https://github.com/tuum-tech/assist-restapi-backend.git;
 cd assist-restapi-backend;
 ```
+
 # Prerequisites
-
-1. Install Falcon API 
+- Python3 is needed
 ```
-pip install falcon 
+brew install python3 // On Mac
+sudo apt-get install python3 // On linux
 ```
-2. Install Gunicorn (Only on Mac or Linuc)
+- Virtualenv
 ```
-pip install gunicorn
-```
-3. Install Waitress (Only on Windows)
-```
-pip install waitress
-```
-4. Install PyMongo
-```
-pip install pymongo
+pip3 install virtualenv
 ```
 
-5. Create Database instance
+# Setup
+- Create a python virtual environment
+```
+virtualenv -p `which python3` venv
+```
+- Activate the virtualenv environment
+```
+source venv/bin/activate
+```
+- Install the dependencies
+```
+pip install -r requirements.txt
+```
+- Run mongodb
 ```
 cd tools
-.\mongo.sh
+./mongodb.sh
 ```
 
-# Run the service
-
-On Windows
+# Run
+- Start API server
 ```
-waitress-serve --port=8000 restapi:api
-```
-
-On Mac or Linux
-```
-gunicorn restapi:api
+waitress-serve --port=8000 restapi:api // On Windows
+gunicorn restapi:api --bind='0.0.0.0:8000' // On mac/linux
 ```
 
-To create a transaction, execute this exemple
+# Verify
+- To create a transaction, run the following:
 ```
-curl "http://localhost:8000/create?didid=didexemple&payload=test"
+curl http://localhost:8000/create?didid=didexemple&payload=test
 ```
-
-To verify a transaction, execute this exemple
+- To verify the transaction, run the following:
 ```
-curl "http://localhost:8000/verify?transactionid=9f760fcd-9523-4899-9f58-44efdb2d3c7s"
+curl http://localhost:8000/verify?transactionid=9f760fcd-9523-4899-9f58-44efdb2d3c7s
 ```
