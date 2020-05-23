@@ -96,6 +96,7 @@ def send_raw_DID_transaction(signed_transaction):
     }
     response = requests.post(url, json=payload).json()
     print("response: %s" % response)
+    return response["result"]
 
 def get_raw_DID_transaction(signed_transaction):
     url = "http://localhost:30113"
@@ -192,7 +193,7 @@ def create_raw_transaction(payload_string ):
     #sender_hashed_public_key = base58.b58decode_check(sender_address)[:21].encode("hex")
     sender_hashed_public_key = address_to_programhash(sender_address,False)
     #receiver_address = "EJrijXpAJmFmn6Xbjdh8TZgAYKS1KsK26N" 
-    did_string = "did:elastos:ii4ZCz8LYRHax3YB79SWJcMM2hjaHT35KN#primary"
+    did_string = "ii4ZCz8LYRHax3YB79SWJcMM2hjaHT35KN"
     did_hashed = address_to_programhash(did_string,False)
     print ("Did Hashed %s" % did_hashed)
 
@@ -313,6 +314,6 @@ print("payload %s" % payload)
 #send real_tx in binary, Do not encode to hex
 tx = create_raw_transaction(test_payload)
 
-send_raw_DID_transaction(binascii.hexlify(tx).decode(encoding="utf-8"))
+tx_id = send_raw_DID_transaction(binascii.hexlify(tx).decode(encoding="utf-8"))
 
-# get_raw_DID_transaction("b3a84bcea61ea6a349d89feee0a073a51a1fe02f9dd6813dd9a53a2e4f4c202c")
+get_raw_DID_transaction(tx_id)
