@@ -2,7 +2,7 @@ import struct
 import base58
 import hashlib
 import ecdsa
-from restapi import tx_ela
+import tx_ela
 import random
 import binascii
 import requests
