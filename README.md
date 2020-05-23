@@ -7,6 +7,11 @@ cd assist-restapi-backend;
 ```
 
 # Prerequisites
+- Install required packages
+```
+brew install leveldb // On Mac
+sudo apt-get install libleveldb1v5 libleveldb-dev // On linux
+```
 - Python3 is needed
 ```
 brew install python3 // On Mac
