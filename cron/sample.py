@@ -92,15 +92,17 @@ def send_raw_DID_transaction(signed_transaction):
 
     payload = {
             "method":"sendrawtransaction",
-            "params": {"txid":""+signed_transaction+"","verbose":"true"}
+            "params": [signed_transaction]
     }
+    response = requests.post(url, json=payload).json()
+    print("response: %s" % response)
 
 def get_raw_DID_transaction(signed_transaction):
     url = "http://localhost:30113"
 
     payload = {
             "method":"getrawtransaction",
-            "params": {"txid":""+signed_transaction+"","verbose":"true"}
+            "params": {"txid":""+signed_transaction+"","verbose":True}
     }
 
     response = requests.post(url, json=payload).json()
@@ -310,11 +312,7 @@ print("payload %s" % payload)
 
 #send real_tx in binary, Do not encode to hex
 tx = create_raw_transaction(test_payload)
-print (binascii.hexlify(tx))
 
+send_raw_DID_transaction(binascii.hexlify(tx).decode(encoding="utf-8"))
 
-
-'''
-print (tx)
-send_raw_DID_transaction("b1ac7bcd6d88744b6d23161dfa969bf8e71ecf32f0bac3a44f058fc0c7489b32")
-'''
+# get_raw_DID_transaction("b3a84bcea61ea6a349d89feee0a073a51a1fe02f9dd6813dd9a53a2e4f4c202c")
