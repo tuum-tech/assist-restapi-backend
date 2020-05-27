@@ -13,6 +13,11 @@ from electrumx.lib.util import (pack_le_uint16, pack_le_int32, pack_le_uint32,
                                 pack_le_int64, pack_le_uint64, pack_varint,
                                 pack_varbytes)
 
+import pymongo
+import uuid
+from datetime import datetime, timedelta
+
+
 
 # Address Type
 STANDARD = 0xAC
@@ -40,6 +45,8 @@ generator = ecdsa.ellipticcurve.Point(secp256r1_curve, secp256r1_Gx,
 sender_address = "EKsSQae7goc5oGGxwvgbUxkMsiQhC9ZfJ3"
 private_key= "1d5fdc0ad6b0b90e212042f850c0ab1e7d9fafcbd7a89e6da8ff64e8e5c490d2"
 public_key = "03848390f4a687c247f4f662364c142a060ad10a03749178268decf9461b3c0fa5"                                      
+
+
 
 def ecdsa_sign(private_key: str, data):
     if isinstance(data, str):
@@ -87,36 +94,40 @@ def address_to_programhash(address, as_hex):
     else:
         return programhash
 
-def send_raw_DID_transaction(signed_transaction):
+def send_raw_DID_transaction(transactions):
+    print("Send Raw Transactions")
     url = "http://localhost:30113"
 
     payload = {
             "method":"sendrawtransaction",
-            "params": [signed_transaction]
+            "params": transactions
     }
     response = requests.post(url, json=payload).json()
     print("response: %s" % response)
     return response["result"]
 
-def get_raw_DID_transaction(signed_transaction):
+def get_raw_DID_transaction(txid):
+    print("Get Raw Transactions")
     url = "http://localhost:30113"
 
     payload = {
             "method":"getrawtransaction",
-            "params": {"txid":""+signed_transaction+"","verbose":True}
+            "params": {"txid":""+txid+"","verbose":True}
     }
 
     response = requests.post(url, json=payload).json()
     print("response: %s" % response)
+    return response
 
 def get_utxos():
+    print("Get UTXOS")
     url = "http://localhost:30113"
 
     payload = '{"method":"listunspent","params":{"addresses": ["'+sender_address+'"] }}'
     #print("payload: %s" % payload)
     response = requests.post(url, json=json.loads(payload)).json()
     print("response: %s" % len(response["result"]))
-    lowest_value = 0;
+    lowest_value = 0
     for x in response["result"]:
         print ("in value is: %f" % float(x["amount"]))
         if ( float(x["amount"]) > .000001)  and (lowest_value == 0 or (float(x["amount"]) < lowest_value) ):
@@ -148,24 +159,24 @@ class raw_tx:
 
 
 
-def create_raw_transaction(payload_string ):
+def create_raw_transaction(json_payload):
+    print("Create Raw Transaction")
+
     fee = .000001
-    json_payload = json.loads(payload_string)
     prev_txid = '' 
-    did_string = json_payload["didid"] 
-    spec= json_payload["didRequest"]["header"]["specification"]
-    verification = json_payload["didRequest"]["proof"]["verificationMethod"]
-    signature = json_payload["didRequest"]["proof"]["signature"]
-    payload = json_payload["didRequest"]["payload"]
+
+    did_string = json_payload["proof"]["verificationMethod"].split(":")[2].split("#")[0]
+    spec= json_payload["header"]["specification"]
+    verification = json_payload["proof"]["verificationMethod"]
+    signature = json_payload["proof"]["signature"]
+    payload = json_payload["payload"]
 
     utxo_txid, asset_id, value = get_utxos()
 
     didtx = did_payload()
     didtx.payload = str.encode(payload)
-    #didtx.header["spec"] = b"elastos/did/1.0"
     didtx.header["spec"] = str.encode(spec)
     didtx.header["op"] = b"create"
-    #didtx.header["txid"] = b"cd6dd63985ed458e8e4c5aa6ec4ef25d"
     didtx.header["prev_txid"] = str.encode(prev_txid)
 
     change = int((10**8) * (float(value) - fee))
@@ -175,34 +186,18 @@ def create_raw_transaction(payload_string ):
 
 
     didtx.proof["type"] = b"ECDSAsecp256r1"
-    #didtx.proof["verification"] = b"did:elastos:ii4ZCz8LYRHax3YB79SWJcMM2hjaHT35KN#primary"
     didtx.proof["verification"] = str.encode(verification)
-    #didtx.proof["signature"] = b"2uot4Nxu-aaAg2rmL_8S9BIHZe7l63qquQSbqZkhumfNfP2n8RdX8fFnDS4eQvPbQNzXsdwZQb2vijHrrVBUug"
     didtx.proof["signature"] = str.encode(signature)
 
     tx_proof = tx_ela.DIDProofInfo(type=didtx.proof["type"], verification_method=didtx.proof["verification"], signature=didtx.proof["signature"])
-
     tx_payload = tx_ela.TxPayloadDIDOperation(header=tx_header, payload=didtx.payload, proof=tx_proof).serialize()
 
-    #
-    # Need to pull these from utxo's
-    #
-    #prev_txid = "0883e717fe2fd7184c92bd16dc276645d07897f91b192c7a4694fe77686dea3a"
-    #asset_id = "a3d0eaa466df74983b5d7c543de6904f4c9418ead5ffd6d25814234a96db37b0"
-    
-    #sender_hashed_public_key = base58.b58decode_check(sender_address)[:21].encode("hex")
     sender_hashed_public_key = address_to_programhash(sender_address,False)
-    #receiver_address = "EJrijXpAJmFmn6Xbjdh8TZgAYKS1KsK26N" 
-    did_string = "ii4ZCz8LYRHax3YB79SWJcMM2hjaHT35KN"
+
     did_hashed = address_to_programhash(did_string,False)
     print ("Did Hashed %s" % did_hashed)
 
-
-
-
-
     rtx = raw_tx()
-
 
     rtx.attributes["count"] = struct.pack("<B",1) # one byte
     rtx.attributes["usage"] = 129 #2 bytes
@@ -272,48 +267,66 @@ def create_raw_transaction(payload_string ):
 
     return real_tx
 
-test_payload = """{
-  "_id": "cd6dd63985ed458e8e4c5aa6ec4ef25d",
-  "didid": "org.elastos.trinity.dapp.did",
-  "didRequest": {
-    "header": {
-      "specification": "elastos/did/1.0",
-      "operation": "create"
-    },
-    "payload": "eyJpZCI6ImRpZDplbGFzdG9zOmlpNFpDejhMWVJIYXgzWUI3OVNXSmNNTTJoamFIVDM1S04iLCJwdWJsaWNLZXkiOlt7ImlkIjoiI3ByaW1hcnkiLCJwdWJsaWNLZXlCYXNlNTgiOiJ0MUNpRHFWMlBFRFNGOEN2ZXRFaXBqUEpaUFBuVGJSN2Iyd2cxZTVBYW83bSJ9XSwiYXV0aGVudGljYXRpb24iOlsiI3ByaW1hcnkiXSwidmVyaWZpYWJsZUNyZWRlbnRpYWwiOlt7ImlkIjoiI3RlY2gudHV1bS5hY2FkZW15IiwidHlwZSI6WyJBcHBsaWNhdGlvblByb2ZpbGVDcmVkZW50aWFsIiwiR2FtZUFwcGxpY2F0aW9uUHJvZmlsZUNyZWRlbnRpYWwiLCJTZWxmUHJvY2xhaW1lZENyZWRlbnRpYWwiXSwiaXNzdWFuY2VEYXRlIjoiMjAyMC0wNC0yOVQwNDowNDo0MFoiLCJleHBpcmF0aW9uRGF0ZSI6IjIwMjUtMDQtMjhUMDQ6MDQ6NDBaIiwiY3JlZGVudGlhbFN1YmplY3QiOnsiYWN0aW9uIjoiTGVhcm4gRWxhc3RvcyBieSBwbGF5aW5nIGdhbWVzIGFnYWluc3QgZnJpZW5kcyIsImFwcHBhY2thZ2UiOiJ0ZWNoLnR1dW0uYWNhZGVteSIsImFwcHR5cGUiOiJlbGFzdG9zYnJvd3NlciIsImlkZW50aWZpZXIiOiJ0ZWNoLnR1dW0uYWNhZGVteSJ9LCJwcm9vZiI6eyJ2ZXJpZmljYXRpb25NZXRob2QiOiIjcHJpbWFyeSIsInNpZ25hdHVyZSI6Ikd0aHpvdE50cVNZUzRpdEpjZkM4VFRUUVJEajRCUFNKejliS3ZuM1BPRDBQcEMtX0wyTnJaRXhTVWpjaWlhcWJMazNaOFQtWGJvcmVJcF9vNU9TbXlnIn19XSwiZXhwaXJlcyI6IjIwMjUtMDMtMTlUMTU6MzY6NTNaIiwicHJvb2YiOnsiY3JlYXRlZCI6IjIwMjAtMDQtMjlUMDQ6MDQ6NDBaIiwic2lnbmF0dXJlVmFsdWUiOiJ1OXR5QmVySVhzLUZqQ0xOdDl1MGdRMTNoSElPUGh5VC10dTVjSHBNZjBJNE1rUEpXQ1IwSXJVQk5ORjQ5WDktOE5tYXpaOXEtSWo3NkZvSVFWcDZuQSJ9fQ",
-    "proof": {
-      "type": "ECDSAsecp256r1",
-      "verificationMethod": "did:elastos:ii4ZCz8LYRHax3YB79SWJcMM2hjaHT35KN#primary",
-      "signature": "2uot4Nxu-aaAg2rmL_8S9BIHZe7l63qquQSbqZkhumfNfP2n8RdX8fFnDS4eQvPbQNzXsdwZQb2vijHrrVBUug"
-    }
-  },
-  "createdIn": "2020-05-07 16:21:59.503990",
-  "status": "Pending",
-  "lastUpdate": null
-}"""
-
-'''
-json_payload = json.loads(test_payload)
+class TransactionStatus(object):
+      PENDING = "Pending"
+      PROCESSING = "Processing"
+      WAITING_CONFIRMATIONS = "Waiting confirmations"
+      SUCCEDED = "Succeded"
+      FAILED = "Failed"
 
 
-txid = json_payload["_id"] 
-did_string = json_payload["didid"] 
-spec= json_payload["didRequest"]["header"]["specification"]
-verification = json_payload["didRequest"]["proof"]["verificationMethod"]
-signature = json_payload["didRequest"]["proof"]["signature"]
-payload = json_payload["didRequest"]["payload"]
 
-print("txid %s" % txid)
-print("did_string %s" % did_string)
-print("spec %s" % spec)
-print("verification %s" % verification)
-print("signature %s" % signature)
-print("payload %s" % payload)
-'''
+class MongoDatabase:
+   
+   def __init__(self):
+      self.__client = pymongo.MongoClient("mongodb://mongoadmin:assistmongo@localhost:27017/")
+      self.__db = self.__client["assistdb"]
+      self.__TRANSACTIONS_COLLECTION = "Transactions"
 
-#send real_tx in binary, Do not encode to hex
-tx = create_raw_transaction(test_payload)
+   def get_transaction(self, transactionId):
+      collection = self.__db[self.__TRANSACTIONS_COLLECTION]
+      query = {"_id": transactionId}
+      response = collection.find(query)
+      return response
+   
+   def get_pending_transactions(self):
+      collection = self.__db[self.__TRANSACTIONS_COLLECTION]
+      
 
-tx_id = send_raw_DID_transaction(binascii.hexlify(tx).decode(encoding="utf-8"))
+      updatedValues = { "$set": { "status": TransactionStatus.PROCESSING, "lastUpdate": str( datetime.utcnow() ) } }
+      collection.update_many({"status": TransactionStatus.PENDING}, updatedValues)
+      response = collection.find({"status": TransactionStatus.PROCESSING})
+      return response
 
-get_raw_DID_transaction(tx_id)
+   def update_transaction(self, transactionId, status, response):
+      collection = self.__db[self.__TRANSACTIONS_COLLECTION]
+      query = {"_id": transactionId}
+      updatedValues = { "$set": { "status": status, "lastUpdate": str( datetime.utcnow()), "blockchainTransaction": response  } }
+      collection.update_one(query, updatedValues)
+
+
+try:
+    database = MongoDatabase()
+
+    pendingTransactions = database.get_pending_transactions()
+
+    transactions = []
+    transactionsIds = []
+
+    for pending in pendingTransactions:
+        transactionsIds.append(pending["_id"])
+        tx = create_raw_transaction(pending["didRequest"])
+        transactions.append(binascii.hexlify(tx).decode(encoding="utf-8"))
+
+    tx_id = send_raw_DID_transaction(transactions)
+
+    transactionResponse = get_raw_DID_transaction(tx_id)
+
+    for transactionId in transactionsIds:
+        print("Update Transaction {}".format(transactionId))
+        database.update_transaction(transactionId, TransactionStatus.WAITING_CONFIRMATIONS, transactionResponse)
+
+
+        
+except Exception as e: 
+    print(e)

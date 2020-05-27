@@ -6,4 +6,4 @@ waitress==1.4.3
 requests==2.23.0
 base58==2.0.0
 ecdsa==0.15
-electrumX==1.14.0
+electrumX==1.13.0
