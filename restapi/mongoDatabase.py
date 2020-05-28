@@ -4,8 +4,8 @@ from datetime import datetime, timedelta
 
 class TransactionStatus(object):
       PENDING = "Pending"
-      SENDING = "Sending transaction"
-      WAITING_RESPONSE = "Waiting response"
+      PROCESSING = "Processing"
+      WAITING_CONFIRMATIONS = "Waiting confirmations"
       SUCCEDED = "Succeded"
       FAILED = "Failed"
 
@@ -21,7 +21,7 @@ class MongoDatabase:
    def create_transaction(self, didId, didRequest):
       collection = self.__db[self.__TRANSACTIONS_COLLECTION]
       transactionId = uuid.uuid4().hex
-      transaction = {"_id": transactionId, "didid": didId, "didRequest": didRequest, "createdIn": str( datetime.utcnow() ), "status": TransactionStatus.PENDING, "lastUpdate": None  }
+      transaction = {"_id": transactionId, "didid": didId, "didRequest": didRequest, "createdIn": str( datetime.utcnow() ), "status": TransactionStatus.PENDING, "lastUpdate": None, "blockchainTransaction": None  }
       collection.insert(transaction)
       return transaction
    
