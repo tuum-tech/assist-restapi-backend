@@ -126,12 +126,9 @@ def get_utxos():
     payload = '{"method":"listunspent","params":{"addresses": ["'+sender_address+'"] }}'
     #print("payload: %s" % payload)
     response = requests.post(url, json=json.loads(payload)).json()
-    print("response: %s" % len(response["result"]))
     lowest_value = 0
     for x in response["result"]:
-        print ("in value is: %f" % float(x["amount"]))
         if ( float(x["amount"]) > .000001)  and (lowest_value == 0 or (float(x["amount"]) < lowest_value) ):
-            print ("%f is less than %15.8f" % (float(x["amount"]), lowest_value))
             lowest_value = float(x["amount"])  
             selected_response = x
     #print ("selected response is: %s" % selected_response)
@@ -167,6 +164,7 @@ def create_raw_transaction(json_payload):
 
     did_string = json_payload["proof"]["verificationMethod"].split(":")[2].split("#")[0]
     spec= json_payload["header"]["specification"]
+    operation = json_payload["header"]["operation"]
     verification = json_payload["proof"]["verificationMethod"]
     signature = json_payload["proof"]["signature"]
     payload = json_payload["payload"]
@@ -176,12 +174,10 @@ def create_raw_transaction(json_payload):
     didtx = did_payload()
     didtx.payload = str.encode(payload)
     didtx.header["spec"] = str.encode(spec)
-    didtx.header["op"] = b"create"
+    didtx.header["op"] = str.encode(operation)    
     didtx.header["prev_txid"] = str.encode(prev_txid)
 
     change = int((10**8) * (float(value) - fee))
-    print("change = %s" % change)
-
     tx_header = tx_ela.DIDHeaderInfo(specification=didtx.header["spec"], operation=didtx.header["op"], previoustxid=didtx.header["prev_txid"])
 
 
@@ -195,7 +191,6 @@ def create_raw_transaction(json_payload):
     sender_hashed_public_key = address_to_programhash(sender_address,False)
 
     did_hashed = address_to_programhash(did_string,False)
-    print ("Did Hashed %s" % did_hashed)
 
     rtx = raw_tx()
 
@@ -209,19 +204,16 @@ def create_raw_transaction(json_payload):
     rtx.inputs["sequence"] = 0
 
     tx_input = tx_ela.TxInputELA(prev_hash=hex_str_to_hash(utxo_txid), prev_idx=rtx.inputs["previous_index"], sequence=rtx.inputs["sequence"]).serialize()
-    print("input: %s " % str(tx_input) )
 
 
     # DID requires 2 outputs.  The first one is DID string with amount 0 and the second one is change address and amount.  Fee is about 100 sela (.000001 ELA)
     output1 = tx_ela.TxOutputELA(
             asset_id=hex_str_to_hash(asset_id),
             value=0, output_lock=0, pk_script=did_hashed,output_type=None, output_payload=None ).serialize(tx_ela.TransferAsset)
-    print("output: %s " % (output1) )
 
     output2 = tx_ela.TxOutputELA(
             asset_id=hex_str_to_hash(asset_id),
             value=change, output_lock=0, pk_script=sender_hashed_public_key,output_type=None, output_payload=None).serialize(tx_ela.TransferAsset)
-    print("output: %s " % (output2 ))
 
 
     raw_tx_string = (
@@ -314,6 +306,7 @@ try:
     transactionsIds = []
 
     for pending in pendingTransactions:
+        print("Create Transaction {}".format(pending["_id"]))
         transactionsIds.append(pending["_id"])
         tx = create_raw_transaction(pending["didRequest"])
         transactions.append(binascii.hexlify(tx).decode(encoding="utf-8"))
