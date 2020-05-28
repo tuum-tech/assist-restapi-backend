@@ -33,7 +33,8 @@ source venv/bin/activate
 ```
 - Install the dependencies
 ```
-pip install -r requirements.txt
+pip install -r requirements.txt // On windows and linux
+pip install --global-option=build_ext --global-option="-I/usr/local/include" --global-option="-L/usr/local/lib" -r requirements.txt // On Mac
 ```
 - Run mongodb
 ```
