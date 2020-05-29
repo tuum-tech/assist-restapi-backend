@@ -1,53 +1,29 @@
-# Assist dApp Rest API
+# Assistt Rest API
 
 To start, clone assist-restapi-backend repo
 ```
 git clone https://github.com/tuum-tech/assist-restapi-backend.git;
 cd assist-restapi-backend;
 ```
+
 # Prerequisites
-
-1. Install Falcon API 
+- Install required packages
 ```
-pip install falcon 
-```
-2. Install Gunicorn (Only on Mac or Linuc)
-```
-pip install gunicorn
-```
-3. Install Waitress (Only on Windows)
-```
-pip install waitress
-```
-4. Install SqlAlchemy
-```
-pip install sqlachemy
+./install.sh
 ```
 
-4. Create Database instance
+# Run
+- Start API server
 ```
-cd tools
-.\postgres.sh
-```
-
-# Run the service
-
-On Windows
-```
-waitress-serve --port=8000 restapi:api
+./run.sh
 ```
 
-On Mac or Linux
+# Verify
+- To create a transaction, run the following:
 ```
-gunicorn restapi:api
+curl http://localhost:8000/create?didid=didexemple&payload=test
 ```
-
-To create a transaction, execute this exemple
+- To verify the transaction, run the following:
 ```
-curl "http://localhost:8000/create?didid=didexemple&payload=test"
-```
-
-To verify a transaction, execute this exemple
-```
-curl "http://localhost:8000/verify?transactionid=9f760fcd-9523-4899-9f58-44efdb2d3c7s"
+curl http://localhost:8000/verify?transactionid=9f760fcd-9523-4899-9f58-44efdb2d3c7s
 ```
