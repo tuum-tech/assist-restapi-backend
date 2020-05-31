@@ -10,7 +10,18 @@ function start () {
 
     source .venv/bin/activate
     pip install --upgrade pip
-    pip install -r requirements.txt
+
+    case `uname` in
+    Linux )
+        pip install -r requirements.txt
+        ;;
+    Darwin )
+        pip install --global-option=build_ext --global-option="-I/usr/local/include" --global-option="-L/usr/local/lib" -r requirements.txt
+        ;;
+    *)
+    exit 1
+    ;;
+    esac
 
     gunicorn -b 0.0.0.0:8000 --reload app.main:application
 }

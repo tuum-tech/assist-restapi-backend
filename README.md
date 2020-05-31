@@ -7,7 +7,7 @@ cd assist-restapi-backend;
 ```
 
 # Prerequisites
-- Install required packages
+- Install required packages[Only needs to be done once]
 ```
 ./install.sh
 ```

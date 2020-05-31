@@ -39,6 +39,11 @@ class Item(BaseResource):
 
     def on_get(self, req, res, request_id):
         try:
+            transactionId = req.get_param('transactionid', True)
+            database = Mongo()
+            response = database.get_transaction(transactionId)
+            resp.media = response
+
             user_db = User.find_one(session, user_id)
             self.on_success(res, user_db.to_dict())
         except NoResultFound:

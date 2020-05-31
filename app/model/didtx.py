@@ -5,7 +5,6 @@ from mongoengine import *
 
 
 class Didtx(Document):
-    requestId = IntField(required=True, primary_key=True)
     didId = StringField(max_length=120)
     didRequest = DictField()
     status = StringField(max_length=32)
@@ -14,9 +13,9 @@ class Didtx(Document):
     modified = mongo.DateTimeField(default=datetime.datetime.now)
 
     def __repr__(self):
-        return "<Didtx(requestId='%s', didRequest='%s', createdIn='%s', status='%s')>" % (
-            self.requestId,
+        return "<Didtx(id='%s', didRequest='%s', created='%s', status='%s')>" % (
+            self.id,
             self.didRequest,
-            self.createdIn,
+            self.created,
             self.status,
         )
