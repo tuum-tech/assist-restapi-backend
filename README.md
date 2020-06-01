@@ -19,11 +19,27 @@ cd assist-restapi-backend;
 ```
 
 # Verify
+- To check whether the API is working:
+``` 
+curl http://localhost:8000
+```
 - To create a transaction, run the following:
 ```
-curl http://localhost:8000/create?didid=didexemple&payload=test
+curl -XPOST -H "Content-Type: application/json" -d @test/example_did_request.json http://localhost:8000/v1/didtx/create
 ```
-- To verify the transaction, run the following:
+will return something like:
+``` 
+{"meta": {"code": 200, "message": "OK"}, "data": {"confirmation_id": "5ed561723947b48ab7edc527"}}
 ```
-curl http://localhost:8000/verify?transactionid=9f760fcd-9523-4899-9f58-44efdb2d3c7s
+- To retrieve all the transactions:
+``` 
+curl http://localhost:8000/v1/didtx
+```
+- To retrieve a particular transaction according to confirmation ID:
+```
+curl http://localhost:8000/v1/didtx/confirmation_id/5ed561723947b48ab7edc527
+```
+- To retrieve all transactions for a particular DID:
+```
+curl http://localhost:8000/v1/didtx/did/ii4ZCz8LYRhax3YB39SWJcMM2hjaHT35KD
 ```

@@ -7,7 +7,7 @@ from falcon_cors import CORS
 from app import log, config
 
 from app.api.common import base
-# from app.api.v1 import didtx
+from app.api.v1 import didtx
 from app.errors import AppError
 
 from mongoengine import connect
@@ -20,21 +20,23 @@ class App(falcon.API):
         super(App, self).__init__(*args, **kwargs)
         LOG.info("API Server is starting")
 
+        # Simple endpoint for base
         self.add_route("/", base.BaseResource())
-        # self.add_route("/v1/didtx", didtx.Collection())
-        # self.add_route("/v1/didtx/{request_id}", didtx.Item())
-        # self.add_route("/v1/didtx/create", didtx.Create())
-        # self.add_route("/v1/didtx/send", didtx.Send())
-
+        # Retrieves all the rows
+        self.add_route("/v1/didtx", didtx.Collection())
+        # Retrieves the row according to confirmation ID
+        self.add_route("/v1/didtx/confirmation_id/{confirmation_id}", didtx.ItemFromConfirmationId())
+        # Retreives all rows belonging to a particular DID
+        self.add_route("/v1/didtx/did/{did}", didtx.ItemFromDid())
+        # Creates a new row
+        self.add_route("/v1/didtx/create", didtx.Create())
         self.add_error_handler(AppError, AppError.handle)
 
 
 connect(
     config.MONGO['DATABASE'],
-    host=config.MONGO['HOST'],
-    port=config.MONGO['PORT'],
-    username=config.MONGO['USERNAME'],
-    password=config.MONGO['PASSWORD']
+    host="mongodb://" + config.MONGO['USERNAME'] + ":" + config.MONGO['PASSWORD'] + "@" +
+         config.MONGO['HOST'] + ":" + str(config.MONGO['PORT']) + "/?authSource=admin"
 )
 
 cors = CORS(
