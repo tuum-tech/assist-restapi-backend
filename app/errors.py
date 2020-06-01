@@ -40,12 +40,6 @@ ERR_USER_NOT_EXISTS = {
     "title": "User Not Exists",
 }
 
-ERR_PASSWORD_NOT_MATCH = {
-    "status": falcon.HTTP_400,
-    "code": 22,
-    "title": "Password Not Match",
-}
-
 
 class AppError(Exception):
     def __init__(self, error=ERR_UNKNOWN, description=None):
@@ -104,12 +98,6 @@ class NotSupportedError(AppError):
 class UserNotExistsError(AppError):
     def __init__(self, description=None):
         super().__init__(ERR_USER_NOT_EXISTS)
-        self.error["description"] = description
-
-
-class PasswordNotMatch(AppError):
-    def __init__(self, description=None):
-        super().__init__(ERR_PASSWORD_NOT_MATCH)
         self.error["description"] = description
 
 

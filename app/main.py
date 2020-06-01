@@ -4,11 +4,13 @@ import falcon
 
 from falcon_cors import CORS
 
-from app import log
+from app import log, config
 
 from app.api.common import base
 # from app.api.v1 import didtx
 from app.errors import AppError
+
+from mongoengine import connect
 
 LOG = log.get_logger()
 
@@ -26,6 +28,14 @@ class App(falcon.API):
 
         self.add_error_handler(AppError, AppError.handle)
 
+
+connect(
+    config.MONGO['DATABASE'],
+    host=config.MONGO['HOST'],
+    port=config.MONGO['PORT'],
+    username=config.MONGO['USERNAME'],
+    password=config.MONGO['PASSWORD']
+)
 
 cors = CORS(
     allow_all_origins=True,

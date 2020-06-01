@@ -23,9 +23,9 @@ class Collection(BaseResource):
         rows = []
         for i in Didtx.objects:
             row = {
-                'requestId': i.requestId,
+                'id': i.id,
                 'didRequest': i.didRequest,
-                'createdIn': i.createdIn,
+                'created': i.created,
                 'status': i.status
             }
             rows.append(row)
@@ -34,18 +34,29 @@ class Collection(BaseResource):
 
 class Item(BaseResource):
     """
-    Handle for endpoint: /v1/didtx/{request_id}
+    Handle for endpoint: /v1/didtx/{id}
     """
 
     def on_get(self, req, res, request_id):
-        try:
-            transactionId = req.get_param('transactionid', True)
-            database = Mongo()
-            response = database.get_transaction(transactionId)
-            resp.media = response
+        request_obj = Didtx.objects(id=request_id)
+        self.on_success(res, request_obj)
 
-            user_db = User.find_one(session, user_id)
-            self.on_success(res, user_db.to_dict())
-        except NoResultFound:
-            raise UserNotExistsError("user id: %s" % user_id)
 
+class Create(BaseResource):
+    """
+    Handle for endpoint: /v1/didtx/create
+    """
+
+    def on_get(self, req, res, request_id):
+        request_obj = Didtx.objects(id=request_id)
+        self.on_success(res, request_obj)
+
+
+class Send(BaseResource):
+    """
+    Handle for endpoint: /v1/didtx/send
+    """
+
+    def on_get(self, req, res, request_id):
+        request_obj = Didtx.objects(id=request_id)
+        self.on_success(res, request_obj)
