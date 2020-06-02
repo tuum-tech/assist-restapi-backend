@@ -21,11 +21,11 @@ cd assist-restapi-backend;
 # Verify
 - To check whether the API is working:
 ``` 
-curl http://localhost:8000
+curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000
 ```
 - To create a transaction, run the following:
 ```
-curl -XPOST -H "Content-Type: application/json" -d @test/example_did_request.json http://localhost:8000/v1/didtx/create
+curl -XPOST -H "Authorization: assist-restapi-secret-key" -H "Content-Type: application/json" -H "Accept: application/json" -d @test/example_did_request.json http://localhost:8000/v1/didtx/create
 ```
 will return something like:
 ``` 
@@ -33,13 +33,13 @@ will return something like:
 ```
 - To retrieve all the transactions:
 ``` 
-curl http://localhost:8000/v1/didtx
+curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didtx
 ```
 - To retrieve a particular transaction according to confirmation ID:
 ```
-curl http://localhost:8000/v1/didtx/confirmation_id/5ed561723947b48ab7edc527
+curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didtx/confirmation_id/5ed561723947b48ab7edc527
 ```
 - To retrieve all transactions for a particular DID:
 ```
-curl http://localhost:8000/v1/didtx/did/ii4ZCz8LYRhax3YB39SWJcMM2hjaHT35KD
+curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didtx/did/ii4ZCz8LYRhax3YB39SWJcMM2hjaHT35KD
 ```

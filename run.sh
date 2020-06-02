@@ -24,7 +24,7 @@ function start () {
     ;;
     esac
 
-    gunicorn -b 0.0.0.0:8000 --reload app.main:application
+    gunicorn -b 0.0.0.0:8000 --reload app:application
 }
 
 function stop () {

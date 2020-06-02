@@ -1190,8 +1190,8 @@ class DeserializerDID(DeserializerELA):
         _payload_version = self._read_byte()
         print("payload version: %s " % _payload_version)
         _payload = self._read_payload(_type)
-        #print("payload : %s " % _payload)
-        
+        # print("payload : %s " % _payload)
+
         return TxDID(
             _type,  # type
             _payload_version,  # payload_version
@@ -1259,9 +1259,3 @@ class DeserializerDID(DeserializerELA):
         _payload = self._read_varbytes()
         _proof = self._read_did_operation_proof()
         return TxPayloadDIDOperation(_header, _payload, _proof)
-
-
-
-
-
-
