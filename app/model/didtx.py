@@ -25,6 +25,9 @@ class Didtx(Document):
             "requestFrom": self.requestFrom,
             "didRequest": self.didRequest,
             "status": self.status,
+            "rawTransaction": self.rawTransaction,
+            "extraInfo": self.extraInfo,
+            "blockchainTxId": self.blockchainTxId,
             "blockchainTx": self.blockchainTx,
             "created": str(self.created),
             "modified": str(self.modified)
