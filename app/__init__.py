@@ -63,32 +63,67 @@ application = App(middleware=[
 def send_tx_to_did_sidechain():
     did_publish = DidPublish()
 
-    # Create raw transactions
     pending_transactions = []
     try:
-        for row in did_publish.rows_pending:
+        # Create raw transactions
+        rows_pending = Didtx.objects(status=config.SERVICE_STATUS_PENDING)
+        for row in rows_pending:
             tx = did_publish.create_raw_transaction(row.did, row.didRequest)
             tx_decoded = binascii.hexlify(tx).decode(encoding="utf-8")
             pending_transactions.append(tx_decoded)
+            row.rawTransaction = tx_decoded
+            row.save()
 
         if pending_transactions:
+            LOG.info("Found Pending transactions. Sending " + str(len(pending_transactions)) + "transactions to DID "
+                                                                                          "sidechain now...")
             # Send transaction to DID sidechain
-            tx_id = did_publish.send_raw_transaction(pending_transactions)
-            for row in did_publish.rows_pending:
-                row.status = config.SERVICE_STATUS_PROCESSING
-                row.blockchainTxId = tx_id
+            response = did_publish.send_raw_transaction(pending_transactions)
+            tx_id = response["result"]
+            for row in rows_pending:
+                # If for whatever reason, the transactions fail, put them in quarantine and come back to it later
+                if tx_id:
+                    row.status = config.SERVICE_STATUS_PROCESSING
+                    row.blockchainTxId = tx_id
+                    row.rawTransaction = ''
+                else:
+                    row.status = config.SERVICE_STATUS_QUARANTINE
+                    row.extraInfo = response["error"]
+                    LOG.info("Error sending transaction for id:" + str(row.id) + " did:" + row.did + " Error: " + str(row.extraInfo))
                 row.save()
 
         # Get info about the recent transaction hash and save it to the database
-        for row in did_publish.rows_processing:
+        rows_processing = Didtx.objects(status=config.SERVICE_STATUS_PROCESSING)
+        for row in rows_processing:
             blockchain_tx = did_publish.get_raw_transaction(row.blockchainTxId)
             confirmations = blockchain_tx["result"]["confirmations"]
             if confirmations > 6:
                 row.status = config.SERVICE_STATUS_COMPLETED
             row.blockchainTx = blockchain_tx
             row.save()
+
+        # Try to process quarantined transactions one at a time
+        rows_quarantined = Didtx.objects(status=config.SERVICE_STATUS_QUARANTINE)
+        for row in rows_quarantined:
+            did_publish.current_wallet_index += 1
+            if did_publish.current_wallet_index > config.NUM_WALLETS - 1:
+                did_publish.current_wallet_index = 1
+            # Try sending each transaction one by one
+            response = did_publish.send_raw_transaction([row.rawTransaction])
+            tx_id = response["result"]
+            if tx_id:
+                row.status = config.SERVICE_STATUS_PROCESSING
+                row.blockchainTxId = tx_id
+                row.rawTransaction = ''
+                row.extraInfo = ''
+                break
+            else:
+                row.extraInfo = response["error"]
+                LOG.info("Error sending transaction for id:" + str(row.id) + " did:" + row.did + " Error: " + str(row.extraInfo))
+            row.save()
+
     except Exception as e:
-        LOG.info("Could not send transactions to the DID sidechain:", e)
+        LOG.info("Could not send transactions to the DID sidechain:" + str(e))
 
 
 # Start cron scheduler

@@ -14,17 +14,13 @@ from electrumx.lib.util import pack_varint
 
 from app import log, config
 
-from app.model import Didtx
-
 LOG = log.get_logger()
 
 
 class DidPublish(object):
 
     def __init__(self):
-        self.rows_pending = Didtx.objects(status=config.SERVICE_STATUS_PENDING)
-        self.rows_processing = Didtx.objects(status=config.SERVICE_STATUS_PROCESSING)
-        self.wallets = [config.WALLET1, config.WALLET2, config.WALLET3]
+        self.wallets = [config.WALLET1, config.WALLET2]
         self.current_wallet_index = 0
         self.did_sidechain_rpc_url = config.DID_SIDECHAIN_RPC_URL
         self.did_sidechain_fee = 0.000001
@@ -48,7 +44,7 @@ class DidPublish(object):
             "params": transactions
         }
         response = requests.post(self.did_sidechain_rpc_url, json=payload).json()
-        return response["result"]
+        return response
 
     def create_raw_transaction(self, did, json_payload):
         LOG.info("Creating raw transaction...")

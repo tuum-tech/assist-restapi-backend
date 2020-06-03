@@ -8,6 +8,8 @@ class Didtx(Document):
     requestFrom = StringField(max_length=128)
     didRequest = DictField()
     status = StringField(max_length=32)
+    rawTransaction = StringField()
+    extraInfo = DictField()
     blockchainTxId = StringField(max_length=128)
     blockchainTx = DictField()
     created = DateTimeField()
