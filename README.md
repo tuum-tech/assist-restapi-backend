@@ -1,4 +1,4 @@
-# Assistt Rest API
+# Assist Rest API
 
 To start, clone assist-restapi-backend repo
 ```
@@ -7,54 +7,39 @@ cd assist-restapi-backend;
 ```
 
 # Prerequisites
-- Install required packages
+- Install required packages[Only needs to be done once]
 ```
-brew install leveldb // On Mac
-sudo apt-get install libleveldb1v5 libleveldb-dev // On linux
-```
-- Python3 is needed
-```
-brew install python3 // On Mac
-sudo apt-get install python3 // On linux
-```
-- Virtualenv
-```
-pip3 install virtualenv
-```
-
-# Setup
-- Create a python virtual environment
-```
-virtualenv -p `which python3` venv
-```
-- Activate the virtualenv environment
-```
-source venv/bin/activate
-```
-- Install the dependencies
-```
-pip install -r requirements.txt // On windows and linux
-pip install --global-option=build_ext --global-option="-I/usr/local/include" --global-option="-L/usr/local/lib" -r requirements.txt // On Mac
-```
-- Run mongodb
-```
-cd tools
-./mongodb.sh
+./install.sh
 ```
 
 # Run
 - Start API server
 ```
-waitress-serve --port=8000 restapi:api // On Windows
-gunicorn restapi:api --bind='0.0.0.0:8000' // On mac/linux
+./run.sh
 ```
 
 # Verify
+- To check whether the API is working:
+``` 
+curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000
+```
 - To create a transaction, run the following:
 ```
-curl http://localhost:8000/create?didid=didexemple&payload=test
+curl -XPOST -H "Authorization: assist-restapi-secret-key" -H "Content-Type: application/json" -H "Accept: application/json" -d @test/example_did_request.json http://localhost:8000/v1/didtx/create
 ```
-- To verify the transaction, run the following:
+will return something like:
+``` 
+{"meta": {"code": 200, "message": "OK"}, "data": {"confirmation_id": "5ed561723947b48ab7edc527"}}
 ```
-curl http://localhost:8000/verify?transactionid=9f760fcd-9523-4899-9f58-44efdb2d3c7s
+- To retrieve all the transactions:
+``` 
+curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didtx
+```
+- To retrieve a particular transaction according to confirmation ID:
+```
+curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didtx/confirmation_id/5ed561723947b48ab7edc527
+```
+- To retrieve all transactions for a particular DID:
+```
+curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didtx/did/ii4ZCz8LYRhax3YB39SWJcMM2hjaHT35KD
 ```

@@ -3,7 +3,7 @@
 
 # Environments
 .env
-venv/
+.venv
 
 # pycharm
 __pycache__
@@ -16,4 +16,4 @@ __pycache__
 .idea/
 
 # tools
-tools/.mongodb-data
+.mongodb-data
