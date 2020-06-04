@@ -60,6 +60,7 @@ class Create(BaseResource):
     def on_post(self, req, res):
         data = req.media
         did_request = data["didRequest"]
+        memo = data["memo"]
         did = did_request["proof"]["verificationMethod"].replace("did:elastos:", "").split("#")[0]
 
         # TODO: Verify whether the did_request is valid/authenticated
@@ -68,6 +69,7 @@ class Create(BaseResource):
             did=did,
             requestFrom=data["didId"],
             didRequest=did_request,
+            memo=memo,
             status="Pending"
         )
         row.save()
