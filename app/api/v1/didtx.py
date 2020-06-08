@@ -44,9 +44,12 @@ class ItemFromDid(BaseResource):
     """
 
     def on_get(self, req, res, did):
-        rows = Didtx.objects(did=did)
+        print(did.replace("did:elastos:", "").split("#")[0])
+        rows = Didtx.objects(did=did.replace("did:elastos:", "").split("#")[0])
+        print(rows)
         if rows:
             obj = [each.as_dict() for each in rows]
+            print(obj)
             self.on_success(res, obj)
         else:
             raise AppError()
@@ -67,7 +70,7 @@ class Create(BaseResource):
 
         row = Didtx(
             did=did,
-            requestFrom=data["didId"],
+            requestFrom=data["requestFrom"],
             didRequest=did_request,
             memo=memo,
             status="Pending"
