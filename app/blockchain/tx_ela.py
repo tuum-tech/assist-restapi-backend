@@ -1086,7 +1086,6 @@ class DeserializerELA(DeserializerAuxPow):
         return CandidateVotes(_candidate, _votes)
 
     def _read_scripts(self):
-        print("_read_scripts:")
         read_script = self._read_script
         return [read_script() for i in range(self._read_varint())]
 
@@ -1184,13 +1183,9 @@ class DeserializerDID(DeserializerELA):
     def read_tx(self):
         '''Return a deserialized DID transaction.'''
         _type = self._read_byte()
-        print("type: %s " % _type)
         _version = TxVersionDefault
-        print("version: %s " % _version)
         _payload_version = self._read_byte()
-        print("payload version: %s " % _payload_version)
         _payload = self._read_payload(_type)
-        # print("payload : %s " % _payload)
 
         return TxDID(
             _type,  # type
@@ -1218,7 +1213,6 @@ class DeserializerDID(DeserializerELA):
         )
 
     def _read_payload(self, tx_type):
-        print("in _read_payload")
         read_payload = None
         if tx_type == CoinBase:
             read_payload = self._read_payload_coinbase
@@ -1237,7 +1231,6 @@ class DeserializerDID(DeserializerELA):
         elif tx_type == RegisterDID:
             read_payload = self._read_payload_did_operation
         else:
-            print("Error in _read_payload")
             exit(-1)
         _payload = read_payload()
         return _payload

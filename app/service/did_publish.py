@@ -170,7 +170,6 @@ class DidPublish(object):
                 "addresses": [self.wallets[self.current_wallet_index]["address"]]
             }
         }
-        # print("payload: %s" % payload)
         response = requests.post(self.did_sidechain_rpc_url, json=payload).json()
         lowest_value = 0
         for x in response["result"]:

@@ -104,20 +104,9 @@ class Deserializer(object):
         self.binary = binary
         self.binary_length = len(binary)
         self.cursor = start
-    '''
-    def read_tx(self):
-        \'''Return a deserialized transaction.\'''
-        print(f"result: %s" % result)
-        return Tx(
-            self._read_le_int32(),  # version
-            self._read_inputs(),    # inputs
-            self._read_outputs(),   # outputs
-            self._read_le_uint32()  # locktime
-        )''' 
 
     def read_tx(self):
         '''Return a deserialized transaction.'''
-        print(f"version: %s" % (self._read_le_int32()))
         return Tx(
             self._read_le_int32(),  # version
             self._read_inputs(),    # inputs
@@ -1005,18 +994,3 @@ class DeserializerSimplicity(Deserializer):
                 self._read_outputs(),   # outputs
                 self._read_le_uint32()  # locktime
             )
-
-
-print("test")
-bfh = bytes.fromhex
-_raw_transction = "02000100133237313134303730313235383734333732313401b71b2ad8f1c3d0ea91f11579ceb6a6d10d6db9b704c58ba11ad78514841accd701000000000002b037db964a231458d2d6ffd5ea18944c4f90e63d547c5d3b9874df66a4ead0a300c06e31d91001000000000021282c1ab53636b52d68b96b26a74fb34f36943a87b037db964a231458d2d6ffd5ea18944c4f90e63d547c5d3b9874df66a4ead0a3e48b881c0560030000000000217bd03d5606b53ca6d393e5bd969ac44863ab69140000000001414050f0b65faa2ef1e6df351fb1d1679fa187883f7c8e2ba5e220590f2feb2f16ce59f47737a10796c58cad54aea1d90695e91af0e1d9ae56bbc5bf596c1953b6c1232102229c82fb0b94f327a1284854333bdfe181092b2a1c66be710a817afe085500a7ac"
-#_raw_transction = "0601622f3b35a534d810ca68045da66312bcecc7c59e682f704c1153fd05d896d55e000001b037db964a231458d2d6ffd5ea18944c4f90e63d547c5d3b9874df66a4ead0a300a0724e1809000000000000211dcb1c8a6b2c01b7901c25c56be4230d1f5ae5ca0000000000"
-print(bfh(_raw_transction))
-_deserialized = Deserializer(bfh(_raw_transction))
-print("created class")
-tx = _deserialized.read_tx()
-asdfa
-print("hello")
-print(_raw_transction)
-print(tx_type)
-safasdfas
