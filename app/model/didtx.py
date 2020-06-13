@@ -9,7 +9,6 @@ class Didtx(Document):
     didRequest = DictField()
     status = StringField(max_length=32)
     memo = StringField()
-    rawTransaction = StringField()
     extraInfo = DictField()
     blockchainTxId = StringField(max_length=128)
     blockchainTx = DictField()
@@ -27,7 +26,6 @@ class Didtx(Document):
             "didRequest": self.didRequest,
             "status": self.status,
             "memo": self.memo,
-            "rawTransaction": self.rawTransaction,
             "extraInfo": self.extraInfo,
             "blockchainTxId": self.blockchainTxId,
             "blockchainTx": self.blockchainTx,

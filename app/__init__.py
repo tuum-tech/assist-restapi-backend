@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import binascii
+import requests
 
 import falcon
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -59,9 +60,19 @@ application = App(middleware=[
     AuthMiddleware(),
 ])
 
+def verify_did_sidechain_endpoint():
+    result = False
+    response = requests.get
+    return result
 
 def send_tx_to_did_sidechain():
     did_publish = DidPublish()
+    
+    # Verify the DID sidechain is reachable
+    response = did_publish.verify_node_availability()
+    if(not (response and response["result"])):
+        LOG.info("DID sidechain is currently not reachable...")
+        return
 
     pending_transactions = []
     try:
@@ -71,8 +82,6 @@ def send_tx_to_did_sidechain():
             tx = did_publish.create_raw_transaction(row.did, row.didRequest)
             tx_decoded = binascii.hexlify(tx).decode(encoding="utf-8")
             pending_transactions.append(tx_decoded)
-            row.rawTransaction = tx_decoded
-            row.save()
 
         if pending_transactions:
             LOG.info("Found Pending transactions. Sending " + str(len(pending_transactions)) + "transactions to DID "
@@ -85,7 +94,6 @@ def send_tx_to_did_sidechain():
                 if tx_id:
                     row.status = config.SERVICE_STATUS_PROCESSING
                     row.blockchainTxId = tx_id
-                    row.rawTransaction = ''
                 else:
                     row.status = config.SERVICE_STATUS_QUARANTINE
                     row.extraInfo = response["error"]
@@ -109,12 +117,13 @@ def send_tx_to_did_sidechain():
             if did_publish.current_wallet_index > config.NUM_WALLETS - 1:
                 did_publish.current_wallet_index = 1
             # Try sending each transaction one by one
-            response = did_publish.send_raw_transaction([row.rawTransaction])
+            tx = did_publish.create_raw_transaction(row.did, row.didRequest)
+            tx_decoded = binascii.hexlify(tx).decode(encoding="utf-8")
+            response = did_publish.send_raw_transaction([tx_decoded])
             tx_id = response["result"]
             if tx_id:
                 row.status = config.SERVICE_STATUS_PROCESSING
                 row.blockchainTxId = tx_id
-                row.rawTransaction = ''
                 row.extraInfo = ''
                 break
             else:
