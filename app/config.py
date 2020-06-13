@@ -6,7 +6,7 @@ LOG_LEVEL = "DEBUG"
 
 DEBUG = True
 
-CRON_INTERVAL = 10
+CRON_INTERVAL = 100
 
 MONGO = {
     "DATABASE": "assistdb",
