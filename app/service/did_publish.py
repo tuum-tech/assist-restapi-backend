@@ -20,7 +20,7 @@ LOG = log.get_logger()
 class DidPublish(object):
 
     def __init__(self):
-        self.wallets = [config.WALLET1, config.WALLET2]
+        self.wallets = config.WALLETS
         self.current_wallet_index = 0
         self.did_sidechain_rpc_url = config.DID_SIDECHAIN_RPC_URL
         self.did_sidechain_fee = 0.000001
