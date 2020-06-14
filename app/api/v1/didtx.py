@@ -75,6 +75,8 @@ class Create(BaseResource):
             if(did_request["header"] == row.didRequest["header"] and did_request["payload"] == row.didRequest["payload"]):
                 does_exist = True
                 result["duplicate"] = True
+            else:
+                result["duplicate"] = False
         
         # If it doesn't exist in the database, create a new request
         if not does_exist:
