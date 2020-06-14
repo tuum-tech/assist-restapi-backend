@@ -37,6 +37,18 @@ class DidPublish(object):
         except:
             return None
 
+    def get_previous_did_document(self, did):
+        LOG.info("Retrieving previous DID document if available from the DID sidechain...")
+        payload = {
+            "method": "resolvedid",
+            "params": {
+                "did": did,
+                "all": False
+            }
+        }
+        response = requests.post(self.did_sidechain_rpc_url, json=payload).json()
+        return response
+
     def get_raw_transaction(self, txid):
         LOG.info("Retrieving transaction from the DID sidechain...")
         payload = {
@@ -69,8 +81,12 @@ class DidPublish(object):
         utxo_txid, asset_id, value = self.get_utxos()
 
         change = int((10 ** 8) * (float(value) - self.did_sidechain_fee))
+        previous_txid = ""
+        if(operation == "update"):
+            previous_did_document = self.get_previous_did_document(did)
+            previous_txid = previous_did_document["result"]["transaction"]["txid"]
         tx_header = tx_ela.DIDHeaderInfo(specification=str.encode(spec), operation=str.encode(operation),
-                                         previoustxid=b"")
+                                         previoustxid=str.encode(previous_txid))
 
         tx_proof = tx_ela.DIDProofInfo(type=b"ECDSAsecp256r1", verification_method=str.encode(verification),
                                        signature=str.encode(signature))

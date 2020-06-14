@@ -104,10 +104,14 @@ def send_tx_to_did_sidechain():
         rows_processing = Didtx.objects(status=config.SERVICE_STATUS_PROCESSING)
         for row in rows_processing:
             blockchain_tx = did_publish.get_raw_transaction(row.blockchainTxId)
-            confirmations = blockchain_tx["result"]["confirmations"]
-            if confirmations >= 6:
-                row.status = config.SERVICE_STATUS_COMPLETED
-            row.blockchainTx = blockchain_tx
+            if(blockchain_tx["result"]):
+                confirmations = blockchain_tx["result"]["confirmations"]
+                if confirmations >= 6:
+                    row.status = config.SERVICE_STATUS_COMPLETED
+                row.blockchainTx = blockchain_tx
+            else:
+                row.status = config.SERVICE_STATUS_QUARANTINE
+                row.extraInfo = "Cannot find the transaction on the blockchain"
             row.save()
 
         # Try to process quarantined transactions one at a time

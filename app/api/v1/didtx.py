@@ -65,6 +65,8 @@ class Create(BaseResource):
 
         # TODO: Verify whether the did_request is valid/authenticated
 
+        result = {}
+
         # Check if the row already exists with the same didRequest
         does_exist = False
         rows = Didtx.objects(did=did)
@@ -72,6 +74,7 @@ class Create(BaseResource):
             row = rows[0]
             if(did_request["header"] == row.didRequest["header"] and did_request["payload"] == row.didRequest["payload"]):
                 does_exist = True
+                result["duplicate"] = True
         
         # If it doesn't exist in the database, create a new request
         if not does_exist:
@@ -83,8 +86,6 @@ class Create(BaseResource):
                 status="Pending"
             )
             row.save()
-        result= { 
-            "confirmation_id": str(row.id)
-        }
+        result["confirmation_id"] = str(row.id)
         self.on_success(res, result)
 
