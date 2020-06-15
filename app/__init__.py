@@ -106,7 +106,7 @@ def send_tx_to_did_sidechain():
             blockchain_tx = did_publish.get_raw_transaction(row.blockchainTxId)
             if(blockchain_tx["result"]):
                 confirmations = blockchain_tx["result"]["confirmations"]
-                if confirmations >= 6:
+                if confirmations >= 1:
                     row.status = config.SERVICE_STATUS_COMPLETED
                 row.blockchainTx = blockchain_tx
             else:

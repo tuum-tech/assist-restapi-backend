@@ -4,6 +4,7 @@
 # Environments
 .env
 .venv
+.env.prod
 
 # pycharm
 __pycache__
