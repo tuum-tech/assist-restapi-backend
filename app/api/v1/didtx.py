@@ -30,12 +30,27 @@ class ItemFromConfirmationId(BaseResource):
     """
 
     def on_get(self, req, res, confirmation_id):
-        rows = Didtx.objects(id=confirmation_id)
-        if rows:
-            row = [each.as_dict() for each in rows][0]
-            self.on_success(res, row)
-        else:
-            raise AppError()
+        try:
+            rows = Didtx.objects(id=confirmation_id)
+            if rows:
+                row = [each.as_dict() for each in rows][0]
+                self.on_success(res, row)
+            else:
+                print("not found")
+                self.on_error(res, {
+                    "status": "404",
+                    "code": "404",
+                    "message": "Not Found"
+                })
+        except:
+            print("not found")
+            self.on_error(res, {
+                    "status": "404",
+                    "code": "404",
+                    "message": "Not Found"
+                })
+        
+        
 
 
 class ItemFromDid(BaseResource):
@@ -45,6 +60,19 @@ class ItemFromDid(BaseResource):
 
     def on_get(self, req, res, did):
         rows = Didtx.objects(did=did.replace("did:elastos:", "").split("#")[0])
+        if rows:
+            obj = [each.as_dict() for each in rows]
+            self.on_success(res, obj)
+        else:
+            raise AppError()
+
+class RecentItemsFromDid(BaseResource):
+    """
+    Handle for endpoint: /v1/didtx/recent/did/{did}
+    """
+
+    def on_get(self, req, res, did):
+        rows = Didtx.objects(did=did.replace("did:elastos:", "").split("#")[0]).order_by('-modified')[:5]
         if rows:
             obj = [each.as_dict() for each in rows]
             self.on_success(res, obj)
