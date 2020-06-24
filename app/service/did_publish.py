@@ -82,9 +82,9 @@ class DidPublish(object):
 
         change = int((10 ** 8) * (float(value) - self.did_sidechain_fee))
         previous_txid = ""
-        if(operation == "update"):
-            previous_did_document = self.get_previous_did_document(did)
-            previous_txid = previous_did_document["result"]["transaction"]["txid"]
+        #if(operation == "update"):
+        #    previous_did_document = self.get_previous_did_document(did)
+        #    previous_txid = previous_did_document["result"]["transaction"]["txid"]
         tx_header = tx_ela.DIDHeaderInfo(specification=str.encode(spec), operation=str.encode(operation),
                                          previoustxid=str.encode(previous_txid))
 

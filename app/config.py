@@ -8,7 +8,7 @@ LOG_LEVEL = "DEBUG"
 
 DEBUG = True
 
-CRON_INTERVAL = config('CRON_INTERVAL', default=100, cast=int)
+CRON_INTERVAL = 10
 
 MONGO = {
     "DATABASE": config('MONGO_DATABASE'),

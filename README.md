@@ -20,7 +20,7 @@ cp .env.example .env
 - Modify .env file with any number of wallets to use
 - Start API server
 ```
-./run.sh
+./run.sh start
 ```
 
 # Verify

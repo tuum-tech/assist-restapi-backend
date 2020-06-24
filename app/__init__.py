@@ -60,11 +60,6 @@ application = App(middleware=[
     AuthMiddleware(),
 ])
 
-def verify_did_sidechain_endpoint():
-    result = False
-    response = requests.get
-    return result
-
 def send_tx_to_did_sidechain():
     did_publish = DidPublish()
     
