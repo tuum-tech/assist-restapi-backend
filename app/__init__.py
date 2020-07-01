@@ -85,6 +85,8 @@ def send_tx_to_did_sidechain():
         rows_pending = Didtx.objects(status=config.SERVICE_STATUS_PENDING)
         for row in rows_pending:
             tx = did_publish.create_raw_transaction(row.did, row.didRequest)
+            if not tx:
+                return
             tx_decoded = binascii.hexlify(tx).decode(encoding="utf-8")
             pending_transactions.append(tx_decoded)
 

@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import sys
 import struct
 import base58
 import hashlib
@@ -77,54 +78,74 @@ class DidPublish(object):
         signature = json_payload["proof"]["signature"]
         payload = json_payload["payload"]
 
-        utxo_txid, asset_id, value = self.get_utxos()
+        try:
+            utxo_txid, asset_id, value = self.get_utxos()
+            wallet_exhausted = 0 
+            while float(value) < 0.000001:
+                if wallet_exhausted == config.NUM_WALLETS:
+                    LOG.info("None of the wallets have enough UTXOs to send a transaction")
+                    return None
+                self.current_wallet_index += 1
+                if self.current_wallet_index > config.NUM_WALLETS - 1:
+                    self.current_wallet_index = 1
+                utxo_txid, asset_id, value = self.get_utxos()
+                wallet_exhausted += 1
 
-        change = int((10 ** 8) * (float(value) - self.did_sidechain_fee))
-        previous_txid = ""
-        if(operation == "update"):
-            previous_txid = json_payload["header"]["previousTxid"]
-        tx_header = tx_ela.DIDHeaderInfo(specification=str.encode(spec), operation=str.encode(operation),
-                                         previoustxid=str.encode(previous_txid))
+            change = int((10 ** 8) * (float(value) - self.did_sidechain_fee))
+            previous_txid = ""
+            if(operation == "update"):
+                #previous_did_document = self.get_previous_did_document(did)
+                #previous_txid = previous_did_document["result"]["transaction"][0]["txid"]
+                previous_txid = json_payload["header"]["previousTxid"]
+            tx_header = tx_ela.DIDHeaderInfo(specification=str.encode(spec), operation=str.encode(operation),
+                                            previoustxid=str.encode(previous_txid))
 
-        tx_proof = tx_ela.DIDProofInfo(type=b"ECDSAsecp256r1", verification_method=str.encode(verification),
-                                       signature=str.encode(signature))
-        tx_payload = tx_ela.TxPayloadDIDOperation(header=tx_header, payload=str.encode(payload),
-                                                  proof=tx_proof).serialize()
-        sender_hashed_public_key = self.address_to_programhash(self.wallets[self.current_wallet_index]["address"], False)
-        did_hashed = self.address_to_programhash(did, False)
+            tx_proof = tx_ela.DIDProofInfo(type=b"ECDSAsecp256r1", verification_method=str.encode(verification),
+                                        signature=str.encode(signature))
+            tx_payload = tx_ela.TxPayloadDIDOperation(header=tx_header, payload=str.encode(payload),
+                                                    proof=tx_proof).serialize()
+            sender_hashed_public_key = self.address_to_programhash(self.wallets[self.current_wallet_index]["address"], False)
+            did_hashed = self.address_to_programhash(did, False)
 
-        # Variables needed for raw_tx
-        tx_type = b'\x0a'  # DID transaction
-        payload_version = struct.pack("<B", 0)  # one byte
-        output_count = struct.pack("<B", 2)  # one byte
-        lock_time = struct.pack("<L", 0)  # 4 bytes
-        program_count = struct.pack("<B", 1)  # one byte
-        tx_attributes = tx_ela.TxAttribute(usage=129, data=b'1234567890').serialize()
-        tx_input = tx_ela.TxInputELA(prev_hash=hex_str_to_hash(utxo_txid), prev_idx=1,
-                                     sequence=0).serialize()
-        # DID requires 2 outputs.  The first one is DID string with amount 0 and the second one is change address and
-        # amount.  Fee is about 100 sela (.000001 ELA)
-        output1 = tx_ela.TxOutputELA(
-            asset_id=hex_str_to_hash(asset_id),
-            value=0, output_lock=0, pk_script=did_hashed, output_type=None, output_payload=None).serialize(
-            tx_ela.TransferAsset)
-        output2 = tx_ela.TxOutputELA(
-            asset_id=hex_str_to_hash(asset_id),
-            value=change, output_lock=0, pk_script=sender_hashed_public_key, output_type=None,
-            output_payload=None).serialize(tx_ela.TransferAsset)
+            # Variables needed for raw_tx
+            tx_type = b'\x0a'  # DID transaction
+            payload_version = struct.pack("<B", 0)  # one byte
+            output_count = struct.pack("<B", 2)  # one byte
+            lock_time = struct.pack("<L", 0)  # 4 bytes
+            program_count = struct.pack("<B", 1)  # one byte
+            tx_attributes = tx_ela.TxAttribute(usage=129, data=b'1234567890').serialize()
+            tx_input = tx_ela.TxInputELA(prev_hash=hex_str_to_hash(utxo_txid), prev_idx=1,
+                                        sequence=0).serialize()
+            # DID requires 2 outputs.  The first one is DID string with amount 0 and the second one is change address and
+            # amount.  Fee is about 100 sela (.000001 ELA)
+            output1 = tx_ela.TxOutputELA(
+                asset_id=hex_str_to_hash(asset_id),
+                value=0, output_lock=0, pk_script=did_hashed, output_type=None, output_payload=None).serialize(
+                tx_ela.TransferAsset)
+            output2 = tx_ela.TxOutputELA(
+                asset_id=hex_str_to_hash(asset_id),
+                value=change, output_lock=0, pk_script=sender_hashed_public_key, output_type=None,
+                output_payload=None).serialize(tx_ela.TransferAsset)
 
-        raw_tx_string = (tx_type + payload_version + tx_payload + program_count + tx_attributes + program_count + tx_input + output_count + output1 + output2 + lock_time)
+            raw_tx_string = (tx_type + payload_version + tx_payload + program_count + tx_attributes + program_count + tx_input + output_count + output1 + output2 + lock_time)
 
-        code = self.get_code_from_pb()
-        signature = self.ecdsa_sign(raw_tx_string)
-        parameter = (struct.pack("B", len(signature)) + signature).hex()
-        parameter_bytes = bytes.fromhex(parameter)
-        code_bytes = bytes.fromhex(code)
-        script = (pack_varint(len(parameter_bytes)) + parameter_bytes + pack_varint(len(code_bytes)) + code_bytes)
+            code = self.get_code_from_pb()
+            signature = self.ecdsa_sign(raw_tx_string)
+            parameter = (struct.pack("B", len(signature)) + signature).hex()
+            parameter_bytes = bytes.fromhex(parameter)
+            code_bytes = bytes.fromhex(code)
+            script = (pack_varint(len(parameter_bytes)) + parameter_bytes + pack_varint(len(code_bytes)) + code_bytes)
 
-        real_tx = (tx_type + payload_version + tx_payload + program_count + tx_attributes + program_count + tx_input + output_count + output1 + output2 + lock_time + program_count + script)
+            real_tx = (tx_type + payload_version + tx_payload + program_count + tx_attributes + program_count + tx_input + output_count + output1 + output2 + lock_time + program_count + script)
 
-        return real_tx
+            return real_tx
+        except Exception as err:
+            message = "Error: " + str(err) + "\n"
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            message += "Unexpected error: " + str(exc_type) + "\n"
+            message += ' File "' + exc_tb.tb_frame.f_code.co_filename + '", line ' + str(exc_tb.tb_lineno) + "\n"
+            LOG.info(f"Error while creating a transaction: {message}")
+            return None
 
     def ecdsa_sign(self, data):
         # Parameters secp256r1 from http://www.secg.org/sec2-v2.pdf, par 2.4.2
@@ -198,7 +219,7 @@ class DidPublish(object):
         response = requests.post(self.did_sidechain_rpc_url, json=payload).json()
         lowest_value = 0
         for x in response["result"]:
-            if (float(x["amount"]) > .000001) and (lowest_value == 0 or (float(x["amount"]) < lowest_value)):
+            if (float(x["amount"]) > 0.000001) and (lowest_value == 0 or (float(x["amount"]) < lowest_value)):
                 lowest_value = float(x["amount"])
                 selected_response = x
         return selected_response["txid"], selected_response["assetid"], selected_response["amount"]
