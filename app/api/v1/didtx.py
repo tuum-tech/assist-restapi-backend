@@ -72,7 +72,7 @@ class Create(BaseResource):
         rows = Didtx.objects(did=did)
         if rows:
             row = rows[0]
-            if(did_request["header"] == row.didRequest["header"] and did_request["payload"] == row.didRequest["payload"]):
+            if(did_request["header"] == row.didRequest["header"] and did_request["payload"] == row.didRequest["payload"] and memo == row.memo):
                 does_exist = True
                 result["duplicate"] = True
             else:
