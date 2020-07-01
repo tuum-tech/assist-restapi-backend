@@ -5,6 +5,7 @@
 .env
 .venv
 .env.prod
+localrun.sh
 
 # pycharm
 __pycache__
