@@ -82,9 +82,8 @@ class DidPublish(object):
 
         change = int((10 ** 8) * (float(value) - self.did_sidechain_fee))
         previous_txid = ""
-        #if(operation == "update"):
-        #    previous_did_document = self.get_previous_did_document(did)
-        #    previous_txid = previous_did_document["result"]["transaction"]["txid"]
+        if(operation == "update"):
+            previous_txid = json_payload["header"]["previousTxid"]
         tx_header = tx_ela.DIDHeaderInfo(specification=str.encode(spec), operation=str.encode(operation),
                                          previoustxid=str.encode(previous_txid))
 
@@ -92,8 +91,7 @@ class DidPublish(object):
                                        signature=str.encode(signature))
         tx_payload = tx_ela.TxPayloadDIDOperation(header=tx_header, payload=str.encode(payload),
                                                   proof=tx_proof).serialize()
-        sender_hashed_public_key = self.address_to_programhash(self.wallets[self.current_wallet_index]["address"],
-                                                               False)
+        sender_hashed_public_key = self.address_to_programhash(self.wallets[self.current_wallet_index]["address"], False)
         did_hashed = self.address_to_programhash(did, False)
 
         # Variables needed for raw_tx
