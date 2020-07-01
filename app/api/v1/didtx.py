@@ -36,14 +36,12 @@ class ItemFromConfirmationId(BaseResource):
                 row = [each.as_dict() for each in rows][0]
                 self.on_success(res, row)
             else:
-                print("not found")
                 self.on_error(res, {
                     "status": "404",
                     "code": "404",
                     "message": "Not Found"
                 })
         except:
-            print("not found")
             self.on_error(res, {
                     "status": "404",
                     "code": "404",
