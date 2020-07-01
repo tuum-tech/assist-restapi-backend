@@ -101,7 +101,7 @@ class DidPublish(object):
         lock_time = struct.pack("<L", 0)  # 4 bytes
         program_count = struct.pack("<B", 1)  # one byte
         tx_attributes = tx_ela.TxAttribute(usage=129, data=b'1234567890').serialize()
-        tx_input = tx_ela.TxInputELA(prev_hash=hex_str_to_hash(utxo_txid), prev_idx=0,
+        tx_input = tx_ela.TxInputELA(prev_hash=hex_str_to_hash(utxo_txid), prev_idx=1,
                                      sequence=0).serialize()
         # DID requires 2 outputs.  The first one is DID string with amount 0 and the second one is change address and
         # amount.  Fee is about 100 sela (.000001 ELA)
