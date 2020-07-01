@@ -17,6 +17,7 @@ from mongoengine import connect
 
 from app.middleware import AuthMiddleware
 from app.model import Didtx
+from app.model import Didstate
 from app.service import DidPublish
 
 LOG = log.get_logger()
@@ -50,31 +51,35 @@ connect(
          config.MONGO['HOST'] + ":" + str(config.MONGO['PORT']) + "/?authSource=admin"
 )
 
-# Set up CORS
-cors = CORS(
-    allow_all_origins=True,
-    allow_all_headers=True,
-    allow_all_methods=True)
-# Initialize the application
 LOG.info("Initializing the Falcon REST API service...")
 application = App(middleware=[
-    cors.middleware,
     AuthMiddleware(),
 ])
-
-def verify_did_sidechain_endpoint():
-    result = False
-    response = requests.get
-    return result
 
 def send_tx_to_did_sidechain():
     did_publish = DidPublish()
     
     # Verify the DID sidechain is reachable
-    response = did_publish.verify_node_availability()
+    response = did_publish.get_block_count()
     if(not (response and response["result"])):
         LOG.info("DID sidechain is currently not reachable...")
         return
+
+    current_height = response["result"] - 1
+    # Retrieve the current height from the database
+    rows = Didstate.objects()
+    if rows:
+        row = rows[0]
+        # Verify whether a new block has been added since last time
+        if current_height > row.currentHeight:
+            row.currentHeight = current_height
+            row.save()
+        else:
+            LOG.info("There hasn't been any new block since last cron job was run...")
+            return
+    else:
+        row = Didstate(currentHeight=current_height)
+        row.save()
 
     pending_transactions = []
     try:
