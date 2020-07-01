@@ -25,11 +25,10 @@ class DidPublish(object):
         self.did_sidechain_rpc_url = config.DID_SIDECHAIN_RPC_URL
         self.did_sidechain_fee = 0.000001
 
-    def verify_node_availability(self):
-        LOG.info("Verifying whether the DID sidechain is reachable..")
+    def get_block_count(self):
+        LOG.info("Retrieving current block count..")
         payload = {
-            "method": "getbestblockhash",
-            "params": []
+            "method": "getblockcount",
         }
         try:
             response = requests.post(self.did_sidechain_rpc_url, json=payload).json()
