@@ -114,7 +114,7 @@ class Create(BaseResource):
 
     def transaction_already_sent(self, did, did_request, memo):
         time_check = datetime.now() - timedelta(minutes=10)
-        rows = Didtx.objects(did=did, memo=memo, modified__gte=time_check)
+        rows = Didtx.objects(did=did, modified__gte=time_check)
         if rows:
             for row in rows:
                if(row.didRequest["header"] == did_request["header"] and row.didRequest["payload"] == did_request["payload"]):
