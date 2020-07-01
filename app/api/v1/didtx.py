@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from datetime import datetime, timedelta
+
 from app import log
 from app.api.common import BaseResource
 from app.model import Didtx
@@ -91,21 +93,14 @@ class Create(BaseResource):
 
         # TODO: Verify whether the did_request is valid/authenticated
 
-        result = {}
-
         # Check if the row already exists with the same didRequest
-        does_exist = False
-        rows = Didtx.objects(did=did)
-        if rows:
-            row = rows[0]
-            if(did_request["header"] == row.didRequest["header"] and did_request["payload"] == row.didRequest["payload"] and memo == row.memo):
-                does_exist = True
-                result["duplicate"] = True
-            else:
-                result["duplicate"] = False
-        
-        # If it doesn't exist in the database, create a new request
-        if not does_exist:
+        transactionSent = self.transaction_already_sent(did, did_request, memo)
+        result = {}
+        if transactionSent:
+            result["duplicate"] = True
+            result["confirmation_id"] = str(transactionSent.id)
+        else:
+            result["duplicate"] = False
             row = Didtx(
                 did=did,
                 requestFrom=data["requestFrom"],
@@ -114,6 +109,14 @@ class Create(BaseResource):
                 status="Pending"
             )
             row.save()
-        result["confirmation_id"] = str(row.id)
+            result["confirmation_id"] = str(row.id)
         self.on_success(res, result)
 
+    def transaction_already_sent(self, did, did_request, memo):
+        time_check = datetime.now() - timedelta(minutes=10)
+        rows = Didtx.objects(did=did, memo=memo, modified__gte=time_check)
+        if rows:
+            for row in rows:
+               if(row.didRequest["header"] == did_request["header"] and row.didRequest["payload"] == did_request["payload"]):
+                  return row
+        return None    
