@@ -117,6 +117,23 @@ class Create(BaseResource):
         rows = Didtx.objects(did=did, modified__gte=time_check)
         if rows:
             for row in rows:
-               if(row.didRequest["header"] == did_request["header"] and row.didRequest["payload"] == did_request["payload"]):
-                  return row
+                # Only check transactions that are in Pending state
+                if(row.status == "Pending"):
+                    # Check if header is the same(whether create or update operation)
+                    if(row.didRequest["header"] == did_request["header"]):
+                        # Check if payload is the same(the info to be published)
+                        if(row.didRequest["payload"] == did_request["payload"]):
+                            # Check if memo is the same. If not, just update the row with the new memo passed
+                            if(row.memo != memo):  
+                                row.memo = memo   
+                                row.save()                        
+                        else:
+                            # If payload is not the same, update the row with new didRequest 
+                            row.didRequest = did_request                       
+                            row.save()     
+                    else:
+                        # If header is not the same, update the row with new didRequest
+                        row.didRequest = did_request
+                        row.save()
+                    return row
         return None    
