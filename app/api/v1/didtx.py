@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 
-from datetime import datetime, timedelta
-
 from app import log
 from app.api.common import BaseResource
 from app.model import Didtx
@@ -113,8 +111,7 @@ class Create(BaseResource):
         self.on_success(res, result)
 
     def transaction_already_sent(self, did, did_request, memo):
-        time_check = datetime.now() - timedelta(minutes=10)
-        rows = Didtx.objects(did=did, modified__gte=time_check)
+        rows = Didtx.objects(did=did)
         if rows:
             for row in rows:
                 # Only check transactions that are in Pending state
@@ -135,5 +132,9 @@ class Create(BaseResource):
                         # If header is not the same, update the row with new didRequest
                         row.didRequest = did_request
                         row.save()
+                    return row
+                # If another transaction for this DID is already Processing, return it because we 
+                # don't want to create a new request without that first being processed successfully
+                elif(row.status == "Processing"):
                     return row
         return None    

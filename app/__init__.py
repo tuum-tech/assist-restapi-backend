@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import binascii
 import requests
+import sys
 
 import falcon
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -106,7 +107,7 @@ def send_tx_to_did_sidechain():
                 else:
                     row.status = config.SERVICE_STATUS_QUARANTINE
                     row.extraInfo = response["error"]
-                    LOG.info("Error sending transaction for id:" + str(row.id) + " did:" + row.did + " Error: " + str(row.extraInfo))
+                    LOG.info("Error sending pending transaction for id:" + str(row.id) + " did:" + row.did + " Error: " + str(row.extraInfo))
                 row.save()
 
         # Get info about the recent transaction hash and save it to the database
@@ -115,12 +116,12 @@ def send_tx_to_did_sidechain():
             blockchain_tx = did_publish.get_raw_transaction(row.blockchainTxId)
             if(blockchain_tx["result"]):
                 confirmations = blockchain_tx["result"]["confirmations"]
-                if confirmations >= 1:
+                if confirmations > 1:
                     row.status = config.SERVICE_STATUS_COMPLETED
                 row.blockchainTx = blockchain_tx
             else:
                 row.status = config.SERVICE_STATUS_QUARANTINE
-                row.extraInfo = "Cannot find the transaction on the blockchain"
+                row.extraInfo = {"error": "Cannot find the transaction on the blockchain"}
             row.save()
 
         # Try to process quarantined transactions one at a time
@@ -141,11 +142,14 @@ def send_tx_to_did_sidechain():
                 break
             else:
                 row.extraInfo = response["error"]
-                LOG.info("Error sending transaction for id:" + str(row.id) + " did:" + row.did + " Error: " + str(row.extraInfo))
+                LOG.info("Error sending quarantined transaction for id:" + str(row.id) + " did:" + row.did + " Error: " + str(row.extraInfo))
             row.save()
-
-    except Exception as e:
-        LOG.info("Could not send transactions to the DID sidechain:" + str(e))
+    except Exception as err:
+        message = "Error: " + str(err) + "\n"
+        exc_type, exc_obj, exc_tb = sys.exc_info()
+        message += "Unexpected error: " + str(exc_type) + "\n"
+        message += ' File "' + exc_tb.tb_frame.f_code.co_filename + '", line ' + str(exc_tb.tb_lineno) + "\n"
+        LOG.info(f"Error while running cron job: {message}")
 
 
 # Start cron scheduler
