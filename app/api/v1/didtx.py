@@ -3,6 +3,7 @@
 from app import log
 from app.api.common import BaseResource
 from app.model import Didtx
+from app.model import Servicecount
 from app.errors import (
     AppError,
 )
@@ -93,21 +94,28 @@ class Create(BaseResource):
 
         # Check if the row already exists with the same didRequest
         transactionSent = self.transaction_already_sent(did, did_request, memo)
+
+        # Check the number of times this did has used the "create" service
+        count = self.get_service_count(did, "create")
         result = {}
         if transactionSent:
             result["duplicate"] = True
             result["confirmation_id"] = str(transactionSent.id)
         else:
-            result["duplicate"] = False
-            row = Didtx(
-                did=did,
-                requestFrom=data["requestFrom"],
-                didRequest=did_request,
-                memo=memo,
-                status="Pending"
-            )
-            row.save()
-            result["confirmation_id"] = str(row.id)
+            if count < 10:
+                result["duplicate"] = False
+                row = Didtx(
+                    did=did,
+                    requestFrom=data["requestFrom"],
+                    didRequest=did_request,
+                    memo=memo,
+                    status="Pending"
+                )
+                row.save()
+                result["confirmation_id"] = str(row.id)
+                self.add_service_count_record(did, "create")
+            else:
+                result["confirmation_id"] = ""
         self.on_success(res, result)
 
     def transaction_already_sent(self, did, did_request, memo):
@@ -138,3 +146,16 @@ class Create(BaseResource):
                 elif(row.status == "Processing"):
                     return row
         return None    
+
+    def get_service_count(self, did, service):
+        rows = Servicecount.objects(did=did, service=service)
+        if rows:
+            return len(rows)
+        return 0    
+
+    def add_service_count_record(self, did, service):
+        row = Servicecount(
+                did=did,
+                service=service,
+        )
+        row.save()
