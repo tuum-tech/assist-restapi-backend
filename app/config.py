@@ -25,6 +25,10 @@ SERVICE_STATUS_COMPLETED = "Completed"
 
 DID_SIDECHAIN_RPC_URL = config('DID_SIDECHAIN_RPC_URL')
 
+# Service Types
+SERVICE_DIDPUBLISH = "did_publish"
+SERVICE_MEDIAUPLOAD = "media_upload" # Unused service
+
 def get_wallets():
     wallets = []
     i = 1

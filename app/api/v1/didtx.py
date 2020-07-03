@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 
-from app import log
+from app import log, config
 from app.api.common import BaseResource
 from app.model import Didtx
+from app.model import Servicecount
 from app.errors import (
     AppError,
 )
@@ -91,23 +92,33 @@ class Create(BaseResource):
 
         # TODO: Verify whether the did_request is valid/authenticated
 
+        # Check the number of times this did has used the "did_publish" service
+        count = self.retrieve_service_count(did, config.SERVICE_DIDPUBLISH)
+
+        result = {}
         # Check if the row already exists with the same didRequest
         transactionSent = self.transaction_already_sent(did, did_request, memo)
-        result = {}
         if transactionSent:
             result["duplicate"] = True
+            result["service_count"] = count
             result["confirmation_id"] = str(transactionSent.id)
-        else:
+        else: 
+            # If less than 10, increment and allow, otherwise, not allowed as max limit is reached
+            if count < 10:
+                row = Didtx(
+                    did=did,
+                    requestFrom=data["requestFrom"],
+                    didRequest=did_request,
+                    memo=memo,
+                    status="Pending"
+                )
+                row.save()            
+                self.add_service_count_record(did, config.SERVICE_DIDPUBLISH)
+                result["confirmation_id"] = str(row.id)
+            else:
+                result["confirmation_id"] = ""
+            result["service_count"] = self.retrieve_service_count(did, config.SERVICE_DIDPUBLISH) 
             result["duplicate"] = False
-            row = Didtx(
-                did=did,
-                requestFrom=data["requestFrom"],
-                didRequest=did_request,
-                memo=memo,
-                status="Pending"
-            )
-            row.save()
-            result["confirmation_id"] = str(row.id)
         self.on_success(res, result)
 
     def transaction_already_sent(self, did, did_request, memo):
@@ -138,3 +149,24 @@ class Create(BaseResource):
                 elif(row.status == "Processing"):
                     return row
         return None    
+
+    def retrieve_service_count(self, did, service):
+        count = 0
+        rows = Servicecount.objects(did=did, service=service)
+        if rows:
+            row = rows[0]
+            count = row.count
+        return count
+
+    def add_service_count_record(self, did, service):
+        rows = Servicecount.objects(did=did, service=service)
+        if rows:
+            row = rows[0]
+            row.count += 1
+        else:
+            row = Servicecount(
+                did=did,
+                service=service,
+                count=0,
+            ) 
+        row.save()
