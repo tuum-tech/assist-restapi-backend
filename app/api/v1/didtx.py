@@ -167,6 +167,6 @@ class Create(BaseResource):
             row = Servicecount(
                 did=did,
                 service=service,
-                count=0,
+                count=1,
             ) 
         row.save()

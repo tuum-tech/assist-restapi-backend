@@ -3,6 +3,7 @@
 function start () {
     docker container stop assist-mongo || true && docker container rm -f assist-mongo || true
     docker run -d --name assist-mongo                     \
+        -v ${PWD}/.mongodb-data:/data/db                         \
         -e MONGO_INITDB_ROOT_USERNAME=mongoadmin          \
         -e MONGO_INITDB_ROOT_PASSWORD=assistmongo         \
         -p 27017:27017                                      \
