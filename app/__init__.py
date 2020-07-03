@@ -11,7 +11,7 @@ from falcon_cors import CORS
 from app import log, config
 
 from app.api.common import base
-from app.api.v1 import didtx
+from app.api.v1 import didtx, servicecount 
 from app.errors import AppError
 
 from mongoengine import connect
@@ -37,10 +37,12 @@ class App(falcon.API):
         self.add_route("/v1/didtx/confirmation_id/{confirmation_id}", didtx.ItemFromConfirmationId())
         # Retreives all rows belonging to a particular DID
         self.add_route("/v1/didtx/did/{did}", didtx.ItemFromDid())
-        # Retreives Recent 5 rows belonging to a particular DID
+        # Retreives recent 5 rows belonging to a particular DID
         self.add_route("/v1/didtx/recent/did/{did}", didtx.RecentItemsFromDid())
         # Creates a new row
         self.add_route("/v1/didtx/create", didtx.Create())
+        # Retrieves the service count for a particular DID
+        self.add_route("/v1/service_count/{did}/{service}", servicecount.GetServiceCount())
         self.add_error_handler(AppError, AppError.handle)
 
 
