@@ -1,12 +1,14 @@
 import datetime
 
-from mongoengine import StringField, DictField, DateTimeField, Document
+from mongoengine import IntField, StringField, DictField, DateTimeField, Document
 
 
 class Servicecount(Document):
     did = StringField(max_length=128)
     service = StringField(max_length=32)
+    count = IntField()
     created = DateTimeField()
+    modified = DateTimeField(default=datetime.datetime.now)
 
     def __repr__(self):
         return str(self.as_dict())
@@ -16,6 +18,7 @@ class Servicecount(Document):
             "id": str(self.id),
             "did": self.did,
             "service": self.service,
+            "count": self.count,
             "created": str(self.created),
             "modified": str(self.modified)
         }
