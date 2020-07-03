@@ -110,13 +110,13 @@ def send_tx_to_did_sidechain():
                     LOG.info("Error sending pending transaction for id:" + str(row.id) + " did:" + row.did + " Error: " + str(row.extraInfo))
                 row.save()
 
-        # Get info about the recent transaction hash and save it to the database
-        rows_processing = Didtx.objects(status=config.SERVICE_STATUS_PROCESSING)
+        # Get info about all the transactions and save them to the database
+        rows_processing = Didtx.objects(status__in=[config.SERVICE_STATUS_PROCESSING, config.SERVICE_STATUS_COMPLETED])
         for row in rows_processing:
             blockchain_tx = did_publish.get_raw_transaction(row.blockchainTxId)
             if(blockchain_tx["result"]):
                 confirmations = blockchain_tx["result"]["confirmations"]
-                if confirmations > 1:
+                if(confirmations > 1 and row.status != config.SERVICE_STATUS_COMPLETED):
                     row.status = config.SERVICE_STATUS_COMPLETED
                 row.blockchainTx = blockchain_tx
             else:
