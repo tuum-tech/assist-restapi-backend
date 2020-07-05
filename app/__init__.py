@@ -161,8 +161,9 @@ def send_tx_to_did_sidechain():
 
 
 # Start cron scheduler
-scheduler = BackgroundScheduler()
-scheduler.add_job(send_tx_to_did_sidechain, 'interval', seconds=config.CRON_INTERVAL)
-scheduler.start()
+if(not config.PRODUCTION):
+    scheduler = BackgroundScheduler()
+    scheduler.add_job(send_tx_to_did_sidechain, 'interval', seconds=config.CRON_INTERVAL)
+    scheduler.start()
 
 
