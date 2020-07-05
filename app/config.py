@@ -4,6 +4,8 @@ BRAND_NAME = "Assist REST API"
 
 SECRET_KEY = config('SECRET_KEY')
 
+PRODUCTION = config('PRODUCTION', default=False, cast=bool)
+
 LOG_LEVEL = "DEBUG"
 
 DEBUG = True
@@ -13,7 +15,7 @@ CRON_INTERVAL = config('CRON_INTERVAL', default=100, cast=int)
 MONGO = {
     "DATABASE": config('MONGO_DATABASE'),
     "HOST": config('MONGO_HOST'),
-    "PORT": config('MONGO_PORT'),
+    "PORT": config('MONGO_PORT', default=27017, cast=int),
     "USERNAME": config('MONGO_USERNAME'),
     "PASSWORD": config('MONGO_PASSWORD')
 }

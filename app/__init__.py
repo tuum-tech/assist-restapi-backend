@@ -45,14 +45,20 @@ class App(falcon.API):
         self.add_route("/v1/service_count/{did}/{service}", servicecount.GetServiceCount())
         self.add_error_handler(AppError, AppError.handle)
 
-
 # Connect to mongodb
 LOG.info("Connecting to mongodb...")
-connect(
-    config.MONGO['DATABASE'],
-    host="mongodb://" + config.MONGO['USERNAME'] + ":" + config.MONGO['PASSWORD'] + "@" +
-         config.MONGO['HOST'] + ":" + str(config.MONGO['PORT']) + "/?authSource=admin"
-)
+if(config.PRODUCTION):
+    connect(
+        config.MONGO['DATABASE'],
+        host="mongodb+srv://" + config.MONGO['USERNAME'] + ":" + config.MONGO['PASSWORD'] + "@" +
+            config.MONGO['HOST'] + "/?retryWrites=true&w=majority"
+    )
+else:
+    connect(
+        config.MONGO['DATABASE'],
+        host="mongodb://" + config.MONGO['USERNAME'] + ":" + config.MONGO['PASSWORD'] + "@" +
+            config.MONGO['HOST'] + ":" + str(config.MONGO['PORT']) + "/?authSource=admin"
+    )
 
 LOG.info("Initializing the Falcon REST API service...")
 application = App(middleware=[
