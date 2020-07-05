@@ -30,7 +30,7 @@ rm -rf .mongodb-data
 # Verify
 - To check whether the API is working:
 ``` 
-curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000
+curl http://localhost:8000
 ```
 - To create a transaction, run the following:
 ```

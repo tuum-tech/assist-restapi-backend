@@ -12,6 +12,9 @@ class AuthMiddleware(object):
             res.complete = True
             return True
         
+        if req.path == "/":
+            return True 
+
         token = req.get_header('Authorization')
 
         if token is None:
