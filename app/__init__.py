@@ -102,7 +102,7 @@ def send_tx_to_did_sidechain():
             pending_transactions.append(tx_decoded)
 
         if pending_transactions:
-            LOG.info("Found Pending transactions. Sending " + str(len(pending_transactions)) + "transactions to DID "
+            LOG.info("Pending: Found transactions. Sending " + str(len(pending_transactions)) + " transactions to DID "
                                                                                           "sidechain now...")
             # Send transaction to DID sidechain
             response = did_publish.send_raw_transaction(pending_transactions)
@@ -110,11 +110,11 @@ def send_tx_to_did_sidechain():
             for row in rows_pending:
                 # If for whatever reason, the transactions fail, put them in quarantine and come back to it later
                 if tx_id:
-                    LOG.info("Successfully sent transaction to the blockchain: tx_id: " + tx_id)
+                    LOG.info("Pending: Successfully sent transaction to the blockchain: tx_id: " + tx_id)
                     row.status = config.SERVICE_STATUS_PROCESSING
                     row.blockchainTxId = tx_id
                 else:
-                    LOG.info("Error sending pending transaction for id:" + str(row.id) + " did:" + row.did + " Error: " + str(row.extraInfo))
+                    LOG.info("Pending: Error sending transaction for id:" + str(row.id) + " did:" + row.did + " Error: " + str(row.extraInfo))
                     row.status = config.SERVICE_STATUS_QUARANTINE
                     row.extraInfo = response["error"]
                 row.save()
@@ -123,19 +123,18 @@ def send_tx_to_did_sidechain():
         rows_processing = Didtx.objects(status__in=[config.SERVICE_STATUS_PROCESSING, config.SERVICE_STATUS_COMPLETED])
         for row in rows_processing:
             blockchain_tx = did_publish.get_raw_transaction(row.blockchainTxId)
+            LOG.info("Processing: Blockchain transaction info for " + row.blockchainTxId + " " + blockchain_tx)
             if(blockchain_tx["result"]):
                 confirmations = blockchain_tx["result"]["confirmations"]
                 if(confirmations > 1 and row.status != config.SERVICE_STATUS_COMPLETED):
                     row.status = config.SERVICE_STATUS_COMPLETED
-                row.blockchainTx = blockchain_tx
-            else:
-                row.status = config.SERVICE_STATUS_QUARANTINE
-                row.extraInfo = {"error": "Cannot find the transaction on the blockchain"}
+            row.blockchainTx = blockchain_tx
             row.save()
 
         # Try to process quarantined transactions one at a time
         rows_quarantined = Didtx.objects(status=config.SERVICE_STATUS_QUARANTINE)
         for row in rows_quarantined:
+            LOG.info("Quarantine: Trying to re-send quarantined transaction: Transaction ID: " + str(row.id) + " DID: " + row.did)
             did_publish.current_wallet_index += 1
             if did_publish.current_wallet_index > config.NUM_WALLETS - 1:
                 did_publish.current_wallet_index = 1
@@ -151,7 +150,7 @@ def send_tx_to_did_sidechain():
                 break
             else:
                 row.extraInfo = response["error"]
-                LOG.info("Error sending quarantined transaction for id:" + str(row.id) + " did:" + row.did + " Error: " + str(row.extraInfo))
+                LOG.info("Qurantine: Error sending transaction for id:" + str(row.id) + " did:" + row.did + " Error: " + str(row.extraInfo))
             row.save()
     except Exception as err:
         message = "Error: " + str(err) + "\n"
