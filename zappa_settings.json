@@ -9,6 +9,7 @@
         "events": [{
             "function": "app.send_tx_to_did_sidechain",
             "expression": "rate(2 minutes)" 
-        }]
+        }],
+        "keep_warm": false
     }
 }
