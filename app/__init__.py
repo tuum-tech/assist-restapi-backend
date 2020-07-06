@@ -126,7 +126,7 @@ def send_tx_to_did_sidechain():
             LOG.info("Processing: Blockchain transaction info for id: " + str(row.id) + " DID:" + row.did)
             if(blockchain_tx["result"]):
                 confirmations = blockchain_tx["result"]["confirmations"]
-                if(confirmations > 1 and row.status != config.SERVICE_STATUS_COMPLETED):
+                if(confirmations > 2 and row.status != config.SERVICE_STATUS_COMPLETED):
                     row.status = config.SERVICE_STATUS_COMPLETED
             row.blockchainTx = blockchain_tx
             row.save()
