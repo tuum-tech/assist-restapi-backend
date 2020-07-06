@@ -56,3 +56,14 @@ curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didt
 ```
 curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/service_count/ii4ZCz8LYRhax3YB39SWJcMM2hjaHT35KD/did_publish
 ```
+
+# Deploy to production
+- Set the value of "PRODUCTION" on .env to True
+- Deploy
+```
+zappa deploy prod
+```
+- Schedule cron job
+```
+zappa schedule prod
+```

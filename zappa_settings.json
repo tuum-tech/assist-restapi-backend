@@ -8,19 +8,7 @@
         "aws_region": "us-east-1",
         "events": [{
             "function": "app.send_tx_to_did_sidechain",
-            "expression": "rate(25 seconds)" 
-        }],
-        "aws_environment_variables" : {
-            "SECRET_KEY": "Placeholder",
-            "PRODUCTION": "True",
-            "MONGO_DATABASE": "Placeholder",
-            "MONGO_HOST": "Placeholder",
-            "MONGO_USERNAME": "Placeholder",
-            "MONGO_PASSWORD": "Placeholder",
-            "DID_SIDECHAIN_RPC_URL": "Placeholder",
-            "WALLET1_ADDRESS": "Placeholder",
-            "WALLET1_PRIVATE_KEY": "Placeholder",
-            "WALLET1_PUBLIC_KEY": "Placeholder"
-        }
+            "expression": "rate(2 minutes)" 
+        }]
     }
 }
