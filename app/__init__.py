@@ -110,12 +110,13 @@ def send_tx_to_did_sidechain():
             for row in rows_pending:
                 # If for whatever reason, the transactions fail, put them in quarantine and come back to it later
                 if tx_id:
+                    LOG.info("Successfully sent transaction to the blockchain: tx_id: " + tx_id)
                     row.status = config.SERVICE_STATUS_PROCESSING
                     row.blockchainTxId = tx_id
                 else:
+                    LOG.info("Error sending pending transaction for id:" + str(row.id) + " did:" + row.did + " Error: " + str(row.extraInfo))
                     row.status = config.SERVICE_STATUS_QUARANTINE
                     row.extraInfo = response["error"]
-                    LOG.info("Error sending pending transaction for id:" + str(row.id) + " did:" + row.did + " Error: " + str(row.extraInfo))
                 row.save()
 
         # Get info about all the transactions and save them to the database
