@@ -58,7 +58,7 @@ class ItemFromDid(BaseResource):
     """
 
     def on_get(self, req, res, did):
-        rows = Didtx.objects(did=did.replace("did:elastos:", "").split("#")[0])
+        rows = Didtx.objects(did=did.replace("did:elastos:", "").split("#")[0]).order_by('-modified')
         if rows:
             obj = [each.as_dict() for each in rows]
             self.on_success(res, obj)
