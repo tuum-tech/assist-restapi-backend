@@ -65,8 +65,9 @@ application = App(middleware=[
     AuthMiddleware(),
 ])
 
+did_publish = DidPublish()
+
 def send_tx_to_did_sidechain():
-    did_publish = DidPublish()
     
     # Verify the DID sidechain is reachable
     response = did_publish.get_block_count()
@@ -110,13 +111,13 @@ def send_tx_to_did_sidechain():
             for row in rows_pending:
                 # If for whatever reason, the transactions fail, put them in quarantine and come back to it later
                 if tx_id:
-                    LOG.info("Pending: Successfully sent transaction from wallet: " + did_publish.wallets[did_publish.current_wallet_index]["address"] + " to the blockchain for id: " + str(row.id) + " DID: " + row.did + " tx_id: " + tx_id)
                     row.status = config.SERVICE_STATUS_PROCESSING
                     row.blockchainTxId = tx_id
+                    LOG.info("Pending: Successfully sent transaction from wallet: " + did_publish.wallets[did_publish.current_wallet_index]["address"] + " to the blockchain for id: " + str(row.id) + " DID: " + row.did + " tx_id: " + tx_id)
                 else:
-                    LOG.info("Pending: Error sending transaction from wallet: " + did_publish.wallets[did_publish.current_wallet_index]["address"] + " for id: " + str(row.id) + " DID:" + row.did + " Error: " + str(row.extraInfo))
-                    row.status = config.SERVICE_STATUS_QUARANTINE
                     row.extraInfo = response["error"]
+                    row.status = config.SERVICE_STATUS_QUARANTINE
+                    LOG.info("Pending: Error sending transaction from wallet: " + did_publish.wallets[did_publish.current_wallet_index]["address"] + " for id: " + str(row.id) + " DID:" + row.did + " Error: " + str(row.extraInfo))              
                 row.save()
 
         # Get info about all the transactions and save them to the database
