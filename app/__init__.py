@@ -138,7 +138,7 @@ def send_tx_to_did_sidechain():
             LOG.info("Quarantine: Trying to re-send quarantined transaction for id: " + str(row.id) + " DID: " + row.did)
             did_publish.current_wallet_index += 1
             if did_publish.current_wallet_index > config.NUM_WALLETS - 1:
-                did_publish.current_wallet_index = 1
+                did_publish.current_wallet_index = 0
             # Try sending each transaction one by one
             tx = did_publish.create_raw_transaction(row.did, row.didRequest)
             tx_decoded = binascii.hexlify(tx).decode(encoding="utf-8")
@@ -161,11 +161,9 @@ def send_tx_to_did_sidechain():
         message += ' File "' + exc_tb.tb_frame.f_code.co_filename + '", line ' + str(exc_tb.tb_lineno) + "\n"
         LOG.info(f"Error while running cron job: {message}")
 
-
 # Start cron scheduler
 if(not config.PRODUCTION):
     scheduler = BackgroundScheduler()
     scheduler.add_job(send_tx_to_did_sidechain, 'interval', seconds=config.CRON_INTERVAL)
     scheduler.start()
-
 

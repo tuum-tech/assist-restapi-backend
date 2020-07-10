@@ -79,7 +79,7 @@ class DidPublish(object):
         payload = json_payload["payload"]
 
         try:
-            utxo_txid, asset_id, value = self.get_utxos()
+            utxo_txid, asset_id, value, prev_idx = self.get_utxos()
             wallet_exhausted = 0 
             while float(value) < 0.000001:
                 if wallet_exhausted == config.NUM_WALLETS:
@@ -87,8 +87,8 @@ class DidPublish(object):
                     return None
                 self.current_wallet_index += 1
                 if self.current_wallet_index > config.NUM_WALLETS - 1:
-                    self.current_wallet_index = 1
-                utxo_txid, asset_id, value = self.get_utxos()
+                    self.current_wallet_index = 0
+                utxo_txid, asset_id, value, prev_idx = self.get_utxos()
                 wallet_exhausted += 1
 
             change = int((10 ** 8) * (float(value) - self.did_sidechain_fee))
@@ -114,7 +114,7 @@ class DidPublish(object):
             lock_time = struct.pack("<L", 0)  # 4 bytes
             program_count = struct.pack("<B", 1)  # one byte
             tx_attributes = tx_ela.TxAttribute(usage=129, data=b'1234567890').serialize()
-            tx_input = tx_ela.TxInputELA(prev_hash=hex_str_to_hash(utxo_txid), prev_idx=1,
+            tx_input = tx_ela.TxInputELA(prev_hash=hex_str_to_hash(utxo_txid), prev_idx=prev_idx,
                                         sequence=0).serialize()
             # DID requires 2 outputs.  The first one is DID string with amount 0 and the second one is change address and
             # amount.  Fee is about 100 sela (.000001 ELA)
@@ -222,4 +222,4 @@ class DidPublish(object):
             if (float(x["amount"]) > 0.000001) and (lowest_value == 0 or (float(x["amount"]) < lowest_value)):
                 lowest_value = float(x["amount"])
                 selected_response = x
-        return selected_response["txid"], selected_response["assetid"], selected_response["amount"]
+        return selected_response["txid"], selected_response["assetid"], selected_response["amount"], selected_response["vout"]
