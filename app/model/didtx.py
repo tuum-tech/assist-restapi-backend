@@ -13,7 +13,7 @@ class Didtx(Document):
     blockchainTxId = StringField(max_length=128)
     blockchainTx = DictField()
     created = DateTimeField()
-    modified = DateTimeField(default=datetime.datetime.now)
+    modified = DateTimeField(default=datetime.datetime.utcnow)
 
     def __repr__(self):
         return str(self.as_dict())
@@ -35,6 +35,6 @@ class Didtx(Document):
 
     def save(self, *args, **kwargs):
         if not self.created:
-            self.created = datetime.datetime.now()
-        self.modified = datetime.datetime.now()
+            self.created = datetime.datetime.utcnow()
+        self.modified = datetime.datetime.utcnow()
         return super(Didtx, self).save(*args, **kwargs)
