@@ -121,15 +121,16 @@ def send_tx_to_did_sidechain():
                 row.save()
 
         # Get info about all the transactions and save them to the database
-        rows_processing = Didtx.objects(status__in=[config.SERVICE_STATUS_PROCESSING, config.SERVICE_STATUS_COMPLETED])
+        rows_processing = Didtx.objects(status=config.SERVICE_STATUS_PROCESSING)
         for row in rows_processing:
             blockchain_tx = did_publish.get_raw_transaction(row.blockchainTxId)
+            row.blockchainTx = blockchain_tx
             LOG.info("Processing: Blockchain transaction info from wallet: " + did_publish.wallets[did_publish.current_wallet_index]["address"] + " for id: " + str(row.id) + " DID:" + row.did)
             if(blockchain_tx["result"]):
                 confirmations = blockchain_tx["result"]["confirmations"]
                 if(confirmations > 2 and row.status != config.SERVICE_STATUS_COMPLETED):
                     row.status = config.SERVICE_STATUS_COMPLETED
-            row.blockchainTx = blockchain_tx
+                    row.blockchainTx["result"]["confirmations"] = "2+"
             row.save()
 
         # Try to process quarantined transactions one at a time
