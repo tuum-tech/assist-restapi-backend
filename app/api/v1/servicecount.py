@@ -16,9 +16,9 @@ class GetServiceCount(BaseResource):
     """
 
     def on_get(self, req, res, did, service):
-        rows = Servicecount.objects(did=did, service=service)
+        rows = Servicecount.objects(did=did)
         if rows:
-            obj = [each.as_dict() for each in rows]
+            obj = rows[0].service_count_as_dict(service)
             self.on_success(res, obj)
         else:
             raise AppError()

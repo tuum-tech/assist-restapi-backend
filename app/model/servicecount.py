@@ -5,6 +5,7 @@ from mongoengine import IntField, StringField, DictField, DateTimeField, Documen
 
 class Servicecount(Document):
     did = StringField(max_length=128)
+    data = DictField()
     service = StringField(max_length=32)
     count = IntField()
     created = DateTimeField()
@@ -17,8 +18,17 @@ class Servicecount(Document):
         return {
             "id": str(self.id),
             "did": self.did,
-            "service": self.service,
-            "count": self.count,
+            "data": self.data,
+            "created": str(self.created),
+            "modified": str(self.modified)
+        }
+
+    def service_count_as_dict(self, service):
+        return {
+            "id": str(self.id),
+            "did": self.did,
+            "service": service,
+            "count": self.data[service] if service in self.data.keys() else 0,
             "created": str(self.created),
             "modified": str(self.modified)
         }

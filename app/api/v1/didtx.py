@@ -151,22 +151,24 @@ class Create(BaseResource):
         return None    
 
     def retrieve_service_count(self, did, service):
-        count = 0
-        rows = Servicecount.objects(did=did, service=service)
+        count = 0 
+        rows = Servicecount.objects(did=did)
         if rows:
-            row = rows[0]
-            count = row.count
+            row = rows[0].service_count_as_dict(service)
+            count = row["count"]
         return count
 
     def add_service_count_record(self, did, service):
-        rows = Servicecount.objects(did=did, service=service)
+        rows = Servicecount.objects(did=did)
         if rows:
             row = rows[0]
-            row.count += 1
+            if service in row.data.keys():
+                row.data[service] += 1
+            else:
+                row.data[service] = 1
         else:
             row = Servicecount(
                 did=did,
-                service=service,
-                count=1,
+                data={service: 1}
             ) 
         row.save()
