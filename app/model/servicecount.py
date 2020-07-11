@@ -6,8 +6,6 @@ from mongoengine import IntField, StringField, DictField, DateTimeField, Documen
 class Servicecount(Document):
     did = StringField(max_length=128)
     data = DictField()
-    service = StringField(max_length=32)
-    count = IntField()
     created = DateTimeField()
     modified = DateTimeField(default=datetime.datetime.utcnow)
 
