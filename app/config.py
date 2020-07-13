@@ -32,7 +32,7 @@ SERVICE_DIDPUBLISH = "did_publish"
 SERVICE_MEDIAUPLOAD = "media_upload"  # Unused service
 
 # Service Limits
-SERVICE_DIDPUBLISH_DAILY_LIMIT = config("DID_PUBLISH_DAILY_LIMIT", default=24, cast=int)
+SERVICE_DIDPUBLISH_DAILY_LIMIT = config("DID_PUBLISH_DAILY_LIMIT", default=5, cast=int)
 
 def get_wallets():
     wallets = []

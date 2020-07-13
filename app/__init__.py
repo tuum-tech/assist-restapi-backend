@@ -68,5 +68,5 @@ application = App(middleware=[
 if not config.PRODUCTION:
     scheduler = BackgroundScheduler()
     scheduler.add_job(send_tx_to_did_sidechain, 'interval', seconds=config.CRON_INTERVAL)
-    scheduler.add_job(reset_didpublish_daily_limit, 'interval', hours=config.SERVICE_DIDPUBLISH_DAILY_LIMIT)
+    scheduler.add_job(reset_didpublish_daily_limit, 'interval', hours=24)
     scheduler.start()
