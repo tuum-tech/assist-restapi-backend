@@ -65,6 +65,7 @@ class ItemFromDid(BaseResource):
         else:
             raise AppError()
 
+
 class RecentItemsFromDid(BaseResource):
     """
     Handle for endpoint: /v1/didtx/recent/did/{did}
@@ -103,8 +104,8 @@ class Create(BaseResource):
             result["service_count"] = count
             result["confirmation_id"] = str(transactionSent.id)
         else: 
-            # If less than 10, increment and allow, otherwise, not allowed as max limit is reached
-            if count < 10:
+            # If less than limit, increment and allow, otherwise, not allowed as max limit is reached
+            if count < config.SERVICE_DIDPUBLISH_DAILY_LIMIT:
                 row = Didtx(
                     did=did,
                     requestFrom=data["requestFrom"],
@@ -117,7 +118,7 @@ class Create(BaseResource):
                 result["confirmation_id"] = str(row.id)
             else:
                 result["confirmation_id"] = ""
-            result["service_count"] = self.retrieve_service_count(did, config.SERVICE_DIDPUBLISH) 
+            result["service_count"] = self.retrieve_service_count(did, config.SERVICE_DIDPUBLISH)
             result["duplicate"] = False
         self.on_success(res, result)
 
@@ -126,32 +127,32 @@ class Create(BaseResource):
         if rows:
             for row in rows:
                 # Only check transactions that are in Pending state
-                if(row.status == "Pending"):
+                if row.status == "Pending":
                     # Check if header is the same(whether create or update operation)
-                    if(row.didRequest["header"] == did_request["header"]):
+                    if row.didRequest["header"] == did_request["header"]:
                         # Check if payload is the same(the info to be published)
-                        if(row.didRequest["payload"] == did_request["payload"]):
+                        if row.didRequest["payload"] == did_request["payload"]:
                             # Check if memo is the same. If not, just update the row with the new memo passed
-                            if(row.memo != memo):  
-                                row.memo = memo   
-                                row.save()                        
+                            if row.memo != memo:
+                                row.memo = memo
+                                row.save()
                         else:
-                            # If payload is not the same, update the row with new didRequest 
-                            row.didRequest = did_request                       
-                            row.save()     
+                            # If payload is not the same, update the row with new didRequest
+                            row.didRequest = did_request
+                            row.save()
                     else:
                         # If header is not the same, update the row with new didRequest
                         row.didRequest = did_request
                         row.save()
                     return row
-                # If another transaction for this DID is already Processing, return it because we 
+                # If another transaction for this DID is already Processing, return it because we
                 # don't want to create a new request without that first being processed successfully
-                elif(row.status == "Processing"):
+                elif row.status == "Processing":
                     return row
-        return None    
+        return None
 
     def retrieve_service_count(self, did, service):
-        count = 0 
+        count = 0
         rows = Servicecount.objects(did=did)
         if rows:
             row = rows[0].service_count_as_dict(service)
@@ -170,5 +171,5 @@ class Create(BaseResource):
             row = Servicecount(
                 did=did,
                 data={service: 1}
-            ) 
+            )
         row.save()
