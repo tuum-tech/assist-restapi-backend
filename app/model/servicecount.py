@@ -22,13 +22,6 @@ class Servicecount(Document):
         }
 
     def service_count_as_dict(self, service):
-        if not isinstance(self.data[service], dict):
-            count = self.data[service]
-            self.data[service] = {
-                "count": count,
-                "total_count": count
-            }
-            self.save()
         return {
             "id": str(self.id),
             "did": self.did,

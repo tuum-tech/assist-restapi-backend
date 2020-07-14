@@ -168,19 +168,11 @@ class Create(BaseResource):
         if rows:
             row = rows[0]
             if service in row.data.keys():
-                if isinstance(row.data[service], dict):
-                    if "count" not in row.data[service].keys():
-                        row.data[service] = service_default_count
-                    else:
-                        row.data[service]["count"] += 1
-                        row.data[service]["total_count"] += 1
+                if "count" not in row.data[service].keys():
+                    row.data[service] = service_default_count
                 else:
-                    count = row.data[service]
-                    total_count = len(Didtx.objects(did=did))
-                    row.data[service] = {
-                        "count": count,
-                        "total_count": total_count
-                    }
+                    row.data[service]["count"] += 1
+                    row.data[service]["total_count"] += 1
             else:
                 row.data[service] = service_default_count
         else:
