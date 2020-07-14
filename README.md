@@ -54,7 +54,7 @@ curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didt
 ```
 - To retrieve service count for did_publish service for a particular DID:
 ```
-curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/service_count/ii4ZCz8LYRhax3YB39SWJcMM2hjaHT35KD/did_publish
+curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/service_count/did_publish/ii4ZCz8LYRhax3YB39SWJcMM2hjaHT35KD
 ```
 
 # Deploy to production

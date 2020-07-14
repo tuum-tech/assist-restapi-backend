@@ -161,15 +161,31 @@ class Create(BaseResource):
 
     def add_service_count_record(self, did, service):
         rows = Servicecount.objects(did=did)
+        service_default_count = {
+            "count": 1,
+            "total_count": 1
+        }
         if rows:
             row = rows[0]
             if service in row.data.keys():
-                row.data[service] += 1
+                if isinstance(row.data[service], dict):
+                    if "count" not in row.data[service].keys():
+                        row.data[service] = service_default_count
+                    else:
+                        row.data[service]["count"] += 1
+                        row.data[service]["total_count"] += 1
+                else:
+                    count = row.data[service]
+                    total_count = len(Didtx.objects(did=did))
+                    row.data[service] = {
+                        "count": count,
+                        "total_count": total_count
+                    }
             else:
-                row.data[service] = 1
+                row.data[service] = service_default_count
         else:
             row = Servicecount(
                 did=did,
-                data={service: 1}
+                data={service: service_default_count}
             )
         row.save()

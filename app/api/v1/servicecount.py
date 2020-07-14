@@ -12,10 +12,10 @@ LOG = log.get_logger()
 
 class GetServiceCount(BaseResource):
     """
-    Handle for endpoint: /v1/service_count/{did}/{service}
+    Handle for endpoint: /v1/service_count/{service}/{did}
     """
 
-    def on_get(self, req, res, did, service):
+    def on_get(self, req, res, service, did):
         rows = Servicecount.objects(did=did)
         if rows:
             obj = rows[0].service_count_as_dict(service)
