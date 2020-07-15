@@ -18,7 +18,17 @@ def reset_didpublish_daily_limit():
     rows = Servicecount.objects()
     for row in rows:
         if config.SERVICE_DIDPUBLISH in row.data.keys():
-            row.data["did_publish"] = 0
+            did_txs = Didtx.objects()
+            result = {}
+            for tx in did_txs:
+                if tx.did in result.keys():
+                    result[tx.did] += 1
+                else:
+                    result[tx.did] = 1
+            row.data["did_publish"] = {
+                "count": 0,
+                "total_count": result[row.did]
+            }
             row.save()
 
 
