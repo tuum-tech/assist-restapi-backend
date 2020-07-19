@@ -36,10 +36,13 @@ class App(falcon.API):
         self.add_route("/v1/didtx/did/{did}", didtx.ItemFromDid())
         # Retreives recent 5 rows belonging to a particular DID
         self.add_route("/v1/didtx/recent/did/{did}", didtx.RecentItemsFromDid())
-        # Creates a new row
+        # Creates a new row 
         self.add_route("/v1/didtx/create", didtx.Create())
         # Retrieves the service count for a particular DID
         self.add_route("/v1/service_count/{service}/{did}", servicecount.GetServiceCount())
+         # Retrieves Service Statistics
+        self.add_route("/v1/service_count/statistics", servicecount.GetServiceStatistics())
+        
         self.add_error_handler(AppError, AppError.handle)
 
 
