@@ -15,6 +15,8 @@ case `uname` in
     ;;
 esac
 
+pip3 install virtualenv 
+
 type virtualenv >/dev/null 2>&1 || { echo >&2 "No suitable python virtual env tool found, aborting"; exit 1; }
 
 rm -rf .venv

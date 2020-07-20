@@ -7,6 +7,7 @@ cd assist-restapi-backend;
 ```
 
 # Prerequisites
+- Install docker at [https://docs.docker.com/get-docker/](https://docs.docker.com/get-docker/)
 - Install required packages[Only needs to be done once]
 ```
 ./install.sh
