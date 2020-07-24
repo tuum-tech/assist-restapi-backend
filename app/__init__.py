@@ -39,9 +39,9 @@ class App(falcon.API):
         # Creates a new row 
         self.add_route("/v1/didtx/create", didtx.Create())
         # Retrieves the service count for a particular DID
-        self.add_route("/v1/service_count/{service}/{did}", servicecount.GetServiceCount())
-         # Retrieves Service Statistics
-        self.add_route("/v1/service_count/statistics", servicecount.GetServiceStatistics())
+        self.add_route("/v1/service_count/{service}/{did}", servicecount.GetServiceCountSpecificDidAndService())
+        # Retrieves service statistics
+        self.add_route("/v1/service_count/statistics", servicecount.GetServiceCountAllServices())
         
         self.add_error_handler(AppError, AppError.handle)
 

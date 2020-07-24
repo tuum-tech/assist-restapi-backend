@@ -37,10 +37,6 @@ curl http://localhost:8000
 ```
 curl -XPOST -H "Authorization: assist-restapi-secret-key" -H "Content-Type: application/json" -H "Accept: application/json" -d @test/example_did_request.json http://localhost:8000/v1/didtx/create
 ```
-will return something like:
-``` 
-{"meta": {"code": 200, "message": "OK"}, "data": {"confirmation_id": "5ed561723947b48ab7edc527"}}
-```
 - To retrieve all the transactions:
 ``` 
 curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didtx
@@ -53,9 +49,17 @@ curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didt
 ```
 curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didtx/did/ii4ZCz8LYRhax3YB39SWJcMM2hjaHT35KD
 ```
+- To retrieve recent 5 transactions for a particular DID:
+```
+curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didtx/recent/did/iouMSXKHNcwdbPzb58pXpmGBDBxrMzfq2c
+```
 - To retrieve service count for did_publish service for a particular DID:
 ```
 curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/service_count/did_publish/ii4ZCz8LYRhax3YB39SWJcMM2hjaHT35KD
+```
+- To retreive service count for all the services for all the DIDs:
+```
+curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/service_count/statistics
 ```
 
 # Deploy to production

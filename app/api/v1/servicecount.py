@@ -10,7 +10,7 @@ from app.errors import (
 LOG = log.get_logger()
 
 
-class GetServiceCount(BaseResource):
+class GetServiceCountSpecificDidAndService(BaseResource):
     """
     Handle for endpoint: /v1/service_count/{service}/{did}
     """
@@ -32,7 +32,7 @@ class GetServiceCount(BaseResource):
             }
         self.on_success(res, obj)
 
-class GetServiceStatistics(BaseResource):
+class GetServiceCountAllServices(BaseResource):
     """
     Handle for endpoint: /v1/service_count/statistics
     """
@@ -41,22 +41,25 @@ class GetServiceStatistics(BaseResource):
         LOG.info(f'Enter /v1/service_count/statistics')
         rows = Servicecount.objects()
 
-        obj = {
-            "did_publish":{
+        # Add a new service to this array in the future
+        services = [ "did_publish" ]
+
+        obj = {}
+        for service in services:
+            obj[service] = {
                 "users": 0,
                 "today": 0,
                 "total": 0
             }
-        }
 
         if rows:
             for item in rows:
                 row = item.as_dict()
-                if  row["data"]["did_publish"]:
-                    obj["did_publish"]["users"] += 1
-                    obj["did_publish"]["today"] +=  row["data"]["did_publish"]["count"]
-                    obj["did_publish"]["total"] +=  row["data"]["did_publish"]["total_count"]
-
-        
+                for service in services:
+                    if service in row["data"].keys():
+                        obj[service]["users"] += 1
+                        obj[service]["today"] += row["data"][service]["count"]
+                        obj[service]["total"] += row["data"][service]["total_count"]
+      
         self.on_success(res, obj)
 
