@@ -1,5 +1,7 @@
 {
   "didId": "org.elastos.trinity.dapp.did",
+  "memo": "test4",
+  "requestFrom": "ok",
   "didRequest": {
     "header": {
       "specification": "elastos/did/1.0",
