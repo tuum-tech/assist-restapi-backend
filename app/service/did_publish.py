@@ -43,7 +43,7 @@ class DidPublish(object):
             "method": "resolvedid",
             "params": {
                 "did": did,
-                "all": False
+                "all": True
             }
         }
         response = requests.post(self.did_sidechain_rpc_url, json=payload).json()

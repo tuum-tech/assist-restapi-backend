@@ -4,17 +4,24 @@ import sys
 
 from app import log, config
 
-from app.model import Didtx, Servicecount
+from app.model import Didtx, DidDocument, Servicecount
 from app.model import Didstate
 
-from app.service import DidPublish
+from app.service import DidPublish, get_documents_specific_did
 
 LOG = log.get_logger()
 
 did_publish = DidPublish()
 
+def update_recent_did_documents():
+    LOG.info('Running cron job: update_recent_did_documents')
+    rows = DidDocument.objects()
+    for row in rows:
+        row.documents = get_documents_specific_did(did_publish, row.did)
+        row.save()
 
 def reset_didpublish_daily_limit():
+    LOG.info('Running cron job: reset_didpublish_daily_limit')
     rows = Servicecount.objects()
     for row in rows:
         if config.SERVICE_DIDPUBLISH in row.data.keys():
@@ -33,6 +40,7 @@ def reset_didpublish_daily_limit():
 
 
 def send_tx_to_did_sidechain():
+    LOG.info('Running cron job: send_tx_to_did_sidechain')
     # Verify the DID sidechain is reachable
     response = did_publish.get_block_count()
     if not (response and response["result"]):
