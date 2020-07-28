@@ -1,11 +1,9 @@
 # -*- coding: utf-8 -*-
 
 from app import log
+import datetime
 from app.api.common import BaseResource
 from app.model import DidDocument
-from app.errors import (
-    AppError,
-)
 
 from app.service import DidPublish, get_documents_specific_did
 
@@ -24,12 +22,14 @@ class GetDidDocumentsFromDid(BaseResource):
         if rows:
             row = rows[0]
             row.num_searches += 1
+            row.last_searched = datetime.datetime.utcnow()
         else:
             did_publish = DidPublish()
             row = DidDocument(
                 did=did,
                 documents=get_documents_specific_did(did_publish, did),
-                num_searches=1
+                num_searches=1,
+                last_searched=datetime.datetime.utcnow()
             )
         row.save()
         self.on_success(res, row.as_dict())

@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import binascii
 import sys
+import datetime
 
 from app import log, config
 
@@ -13,12 +14,21 @@ LOG = log.get_logger()
 
 did_publish = DidPublish()
 
+
 def update_recent_did_documents():
     LOG.info('Running cron job: update_recent_did_documents')
     rows = DidDocument.objects()
     for row in rows:
-        row.documents = get_documents_specific_did(did_publish, row.did)
-        row.save()
+        time_since_last_searched = datetime.datetime.utcnow() - row.last_searched
+        # Remove DIDs from the database that no one has searched for the last 90 days
+        if time_since_last_searched.days > 90:
+            LOG.info(f"The DID '{row.did}' has not been searched for the last 90 days. Removing from the database to "
+                     f"save some space")
+            row.delete()
+        else:
+            row.documents = get_documents_specific_did(did_publish, row.did)
+            row.save()
+
 
 def reset_didpublish_daily_limit():
     LOG.info('Running cron job: reset_didpublish_daily_limit')
@@ -130,7 +140,8 @@ def send_tx_to_did_sidechain():
                 row.blockchainTxId = tx_id
                 row.extraInfo = ''
                 LOG.info("Quarantine: Successfully sent quarantined transaction from wallet: " +
-                         did_publish.wallets[did_publish.current_wallet_index]["address"] + " for id: " + str(row.id) + " DID: " + row.did)
+                         did_publish.wallets[did_publish.current_wallet_index]["address"] + " for id: " + str(
+                    row.id) + " DID: " + row.did)
                 break
             else:
                 row.extraInfo = response["error"]
@@ -144,4 +155,3 @@ def send_tx_to_did_sidechain():
         message += "Unexpected error: " + str(exc_type) + "\n"
         message += ' File "' + exc_tb.tb_frame.f_code.co_filename + '", line ' + str(exc_tb.tb_lineno) + "\n"
         LOG.info(f"Error while running cron job: {message}")
-

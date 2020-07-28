@@ -7,6 +7,7 @@ class DidDocument(Document):
     did = StringField(max_length=128)
     documents = DictField()
     num_searches = IntField()
+    last_searched = DateTimeField()
     created = DateTimeField()
     modified = DateTimeField(default=datetime.datetime.utcnow)
 
@@ -19,6 +20,7 @@ class DidDocument(Document):
             "did": self.did,
             "documents": self.documents,
             "num_searches": self.num_searches,
+            "last_searched": str(self.last_searched),
             "created": str(self.created),
             "modified": str(self.modified)
         }

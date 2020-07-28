@@ -5,13 +5,14 @@ import json
 
 from app.model import DidDocument
 
+
 def get_documents_specific_did(did_publish, did):
     documents = {}
     response = did_publish.get_previous_did_document(did)
     if response["result"]:
         transactions = response["result"]["transaction"]
         # Only deal with the last 5 DID documents
-        for tx in transactions[:5]: 
+        for tx in transactions[:5]:
             # Need to add some extra padding so TypeError is not thrown sometimes
             payload = base64.b64decode(tx["operation"]["payload"] + "===").decode("utf-8")
             payload_json = json.loads(payload)

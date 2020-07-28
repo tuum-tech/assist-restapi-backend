@@ -3,9 +3,6 @@
 from app import log
 from app.api.common import BaseResource
 from app.model import Servicecount
-from app.errors import (
-    AppError,
-)
 
 LOG = log.get_logger()
 
@@ -32,6 +29,7 @@ class GetServiceCountSpecificDidAndService(BaseResource):
             }
         self.on_success(res, obj)
 
+
 class GetServiceCountAllServices(BaseResource):
     """
     Handle for endpoint: /v1/service_count/statistics
@@ -42,7 +40,7 @@ class GetServiceCountAllServices(BaseResource):
         rows = Servicecount.objects()
 
         # Add a new service to this array in the future
-        services = [ "did_publish" ]
+        services = ["did_publish"]
 
         obj = {}
         for service in services:
@@ -60,6 +58,5 @@ class GetServiceCountAllServices(BaseResource):
                         obj[service]["users"] += 1
                         obj[service]["today"] += row["data"][service]["count"]
                         obj[service]["total"] += row["data"][service]["total_count"]
-      
-        self.on_success(res, obj)
 
+        self.on_success(res, obj)

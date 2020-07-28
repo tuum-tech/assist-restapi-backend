@@ -7,9 +7,7 @@ import hashlib
 import ecdsa
 from app.blockchain import tx_ela
 import random
-import binascii
 import requests
-import json
 from electrumx.lib.hash import hex_str_to_hash
 from electrumx.lib.util import pack_varint
 
