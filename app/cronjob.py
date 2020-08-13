@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import binascii
+import itertools
 import sys
 import datetime
 
@@ -124,34 +125,77 @@ def send_tx_to_did_sidechain():
 
         # Try to process quarantined transactions one at a time
         rows_quarantined = Didtx.objects(status=config.SERVICE_STATUS_QUARANTINE)
-        for row in rows_quarantined:
-            LOG.info(
-                "Quarantine: Trying to re-send quarantined transaction for id: " + str(row.id) + " DID: " + row.did)
-            did_publish.current_wallet_index += 1
-            if did_publish.current_wallet_index > config.NUM_WALLETS - 1:
-                did_publish.current_wallet_index = 0
-            # Try sending each transaction one by one
-            tx = did_publish.create_raw_transaction(row.did, row.didRequest)
-            tx_decoded = binascii.hexlify(tx).decode(encoding="utf-8")
-            response = did_publish.send_raw_transaction([tx_decoded])
-            tx_id = response["result"]
-            if tx_id:
-                row.status = config.SERVICE_STATUS_PROCESSING
-                row.blockchainTxId = tx_id
-                row.extraInfo = ''
-                LOG.info("Quarantine: Successfully sent quarantined transaction from wallet: " +
-                         did_publish.wallets[did_publish.current_wallet_index]["address"] + " for id: " + str(
-                    row.id) + " DID: " + row.did)
-                break
-            else:
-                row.extraInfo = response["error"]
-                LOG.info("Quarantine: Error sending transaction from wallet: " +
-                         did_publish.wallets[did_publish.current_wallet_index]["address"] + " for id:" + str(
-                    row.id) + " DID:" + row.did + " Error: " + str(row.extraInfo))
-            row.save()
+        binary_split_resend(rows_quarantined)
     except Exception as err:
         message = "Error: " + str(err) + "\n"
         exc_type, exc_obj, exc_tb = sys.exc_info()
         message += "Unexpected error: " + str(exc_type) + "\n"
         message += ' File "' + exc_tb.tb_frame.f_code.co_filename + '", line ' + str(exc_tb.tb_lineno) + "\n"
         LOG.info(f"Error while running cron job: {message}")
+
+        
+def binary_split_resend(rows_quarantined):
+    LOG.info("Binary split")
+    for row in rows_quarantined:
+        LOG.info("Binary split start: rows: " + str(row.modified))
+
+    # Split quarantined transactions into 2 sets and process each set one at a time
+    LOG.info("Binary split of " + str(len(rows_quarantined)) + " quarantined transactions")
+
+    # first create raw transactions for each
+    q_transactions = []
+    for row in rows_quarantined:
+        tx = did_publish.create_raw_transaction(row.did, row.didRequest)
+        if not tx:
+            return
+        tx_decoded = binascii.hexlify(tx).decode(encoding="utf-8")
+        q_transactions.append(tx_decoded)
+
+    # second submit 1/2 tranasactions then the other half
+    # Send transaction to DID sidechain
+    start = 0
+    stop = 0
+    for x in [0, 1]:
+        if x == 0:
+            start = 0
+            stop = round(len(rows_quarantined) / 2)
+            q_half_array = q_transactions[:round(len(rows_quarantined) / 2)]
+            LOG.info("Binary split in pass: " + str(x) + " from 0 to " + str(
+                round(len(rows_quarantined) / 2)) + " total array length: " + str(len(rows_quarantined)))
+        else:
+            start = round(len(q_transactions) / 2)
+            stop = len(q_transactions)
+            q_half_array = q_transactions[round(len(rows_quarantined) / 2):]
+            LOG.info(
+                "Binary split in pass: " + str(x) + " from " + str(round(len(rows_quarantined) / 2)) + " to " + str(
+                    len(rows_quarantined)) + " total array length: " + str(len(rows_quarantined)))
+
+        response = did_publish.send_raw_transaction(q_half_array)
+        tx_id = response["result"]
+        if tx_id:
+            # If transactions are good set the status to "Processing"
+            # use itertools to pull back proper part of the original database rows collection
+            for row in itertools.islice(rows_quarantined, start, stop):
+                row.status = config.SERVICE_STATUS_PROCESSING
+                row.blockchainTxId = tx_id
+                LOG.info("Binary Split: Successfully sent transaction from wallet: " +
+                         did_publish.wallets[did_publish.current_wallet_index][
+                             "address"] + " to the blockchain for id: " + str(
+                    row.id) + " DID: " + row.did + " tx_id: " + tx_id)
+                row.save()
+        else:
+            # If the transaction failed, make sure to switch to a different wallet 
+            did_publish.current_wallet_index += 1
+            if did_publish.current_wallet_index > config.NUM_WALLETS - 1:
+                did_publish.current_wallet_index = 0
+            # if part of batch fails split send it separately
+            subset_of_rows = rows_quarantined[slice(start, stop)]
+            LOG.info("Binary split failed: on pass: " + str(x) + " start: " + str(start) + " stop: " + str(
+                stop) + " length: " + str(len(subset_of_rows)) + " of original: " + str(len(rows_quarantined)))
+
+            if len(subset_of_rows) >= 2:
+                LOG.info("Binary split IF:  start " + str(start) + " stop: " + str(stop) + " length: " + str(
+                    len(subset_of_rows)))
+                for row in subset_of_rows:
+                    LOG.info("Binary split failed: rows: " + str(row.modified))
+                binary_split_resend(subset_of_rows)
