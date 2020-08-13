@@ -6,17 +6,19 @@ from app import log, config
 from apscheduler.schedulers.background import BackgroundScheduler
 
 from app.api.common import base
-from app.api.v1 import didtx, servicecount
+from app.api.v1 import didtx, did_document, servicecount
 from app.errors import AppError
 
 from mongoengine import connect
 
 from app.middleware import AuthMiddleware
 from app.model import Didtx
+from app.model import DidDocument
 from app.model import Didstate
+
 from app.service import DidPublish
 
-from app.cronjob import send_tx_to_did_sidechain, reset_didpublish_daily_limit
+from app.cronjob import send_tx_to_did_sidechain, reset_didpublish_daily_limit, update_recent_did_documents
 
 LOG = log.get_logger()
 
@@ -29,6 +31,7 @@ class App(falcon.API):
         # Simple endpoint for base
         self.add_route("/", base.BaseResource())
         # Retrieves all the rows
+
         self.add_route("/v1/didtx", didtx.Collection())
         # Retrieves the row according to confirmation ID
         self.add_route("/v1/didtx/confirmation_id/{confirmation_id}", didtx.ItemFromConfirmationId())
@@ -36,10 +39,17 @@ class App(falcon.API):
         self.add_route("/v1/didtx/did/{did}", didtx.ItemFromDid())
         # Retreives recent 5 rows belonging to a particular DID
         self.add_route("/v1/didtx/recent/did/{did}", didtx.RecentItemsFromDid())
-        # Creates a new row
+        # Creates a new row 
         self.add_route("/v1/didtx/create", didtx.Create())
+
+        # Retrieves the last 5 DID documents published for a particular DID
+        self.add_route("/v1/documents/did/{did}", did_document.GetDidDocumentsFromDid())
+
         # Retrieves the service count for a particular DID
-        self.add_route("/v1/service_count/{service}/{did}", servicecount.GetServiceCount())
+        self.add_route("/v1/service_count/{service}/{did}", servicecount.GetServiceCountSpecificDidAndService())
+        # Retrieves service statistics
+        self.add_route("/v1/service_count/statistics", servicecount.GetServiceCountAllServices())     
+
         self.add_error_handler(AppError, AppError.handle)
 
 
@@ -68,5 +78,6 @@ application = App(middleware=[
 if not config.PRODUCTION:
     scheduler = BackgroundScheduler()
     scheduler.add_job(send_tx_to_did_sidechain, 'interval', seconds=config.CRON_INTERVAL)
+    scheduler.add_job(update_recent_did_documents, 'interval', seconds=config.CRON_INTERVAL)
     scheduler.add_job(reset_didpublish_daily_limit, 'interval', hours=24)
     scheduler.start()

@@ -7,9 +7,7 @@ import hashlib
 import ecdsa
 from app.blockchain import tx_ela
 import random
-import binascii
 import requests
-import json
 from electrumx.lib.hash import hex_str_to_hash
 from electrumx.lib.util import pack_varint
 
@@ -43,7 +41,7 @@ class DidPublish(object):
             "method": "resolvedid",
             "params": {
                 "did": did,
-                "all": False
+                "all": True
             }
         }
         response = requests.post(self.did_sidechain_rpc_url, json=payload).json()

@@ -17,6 +17,7 @@ class Collection(BaseResource):
     """
 
     def on_get(self, req, res):
+        LOG.info(f'Enter /v1/didtx')
         rows = Didtx.objects()
         if rows:
             obj = [each.as_dict() for each in rows]
@@ -31,6 +32,7 @@ class ItemFromConfirmationId(BaseResource):
     """
 
     def on_get(self, req, res, confirmation_id):
+        LOG.info(f'Enter /v1/didtx/id/{confirmation_id}')
         try:
             rows = Didtx.objects(id=confirmation_id)
             if rows:
@@ -50,14 +52,13 @@ class ItemFromConfirmationId(BaseResource):
                 })
         
         
-
-
 class ItemFromDid(BaseResource):
     """
     Handle for endpoint: /v1/didtx/did/{did}
     """
 
     def on_get(self, req, res, did):
+        LOG.info(f'Enter /v1/didtx/did/{did}')
         rows = Didtx.objects(did=did.replace("did:elastos:", "").split("#")[0]).order_by('-modified')
         if rows:
             obj = [each.as_dict() for each in rows]
@@ -72,6 +73,7 @@ class RecentItemsFromDid(BaseResource):
     """
 
     def on_get(self, req, res, did):
+        LOG.info(f'Enter /v1/didtx/recent/did/{did}')
         rows = Didtx.objects(did=did.replace("did:elastos:", "").split("#")[0]).order_by('-modified')[:5]
         if rows:
             obj = [each.as_dict() for each in rows]
@@ -86,6 +88,7 @@ class Create(BaseResource):
     """
 
     def on_post(self, req, res):
+        LOG.info(f'Enter /v1/didtx/create')
         data = req.media
         did_request = data["didRequest"]
         memo = data["memo"]
