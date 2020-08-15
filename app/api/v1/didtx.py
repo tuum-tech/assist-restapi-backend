@@ -1,5 +1,8 @@
 # -*- coding: utf-8 -*-
 
+import base64
+import json
+
 from app import log, config
 from app.api.common import BaseResource
 from app.model import Didtx
@@ -92,7 +95,10 @@ class Create(BaseResource):
         data = req.media
         did_request = data["didRequest"]
         memo = data["memo"]
-        did = did_request["proof"]["verificationMethod"].replace("did:elastos:", "").split("#")[0]
+
+        payload = did_request["payload"]
+        payload_json = json.loads(base64.b64decode(payload + "===").decode("utf-8"))
+        did = payload_json["id"].replace("did:elastos:", "").split("#")[0]
 
         # TODO: Verify whether the did_request is valid/authenticated
 
