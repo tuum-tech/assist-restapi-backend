@@ -1,0 +1,131 @@
+# -*- coding: utf-8 -*-
+
+import base64
+import json
+import requests
+
+from app import log, config
+
+LOG = log.get_logger()
+
+
+class DidSidechainRpc(object):
+
+    def __init__(self):
+        self.did_sidechain_rpc_url = config.DID_SIDECHAIN_RPC_URL
+
+    def get_block_count(self):
+        LOG.info("Retrieving current block count..")
+        payload = {
+            "method": "getblockcount",
+        }
+        try:
+            response = requests.post(self.did_sidechain_rpc_url, json=payload).json()
+            return response
+        except Exception as e:
+            LOG.info(f"Error while getting block count: {e}")
+            return None
+
+    def get_balance(self, address):
+        LOG.info("Retrieving current balance on DID sidechain..")
+        payload = {
+            "method": "getreceivedbyaddress",
+            "params": {"address": address}
+        }
+        balance = 0
+        response = requests.post(self.did_sidechain_rpc_url, json=payload).json()
+        if response and response["result"]:
+            balance = response["result"]
+        return balance
+
+    def get_previous_did_document(self, did):
+        LOG.info("Retrieving previous DID document if available from the DID sidechain...")
+        payload = {
+            "method": "resolvedid",
+            "params": {
+                "did": did,
+                "all": True
+            }
+        }
+        document = {}
+        response = requests.post(self.did_sidechain_rpc_url, json=payload).json()
+        if response and response["result"]:
+            document = response["result"]
+        return document
+
+    def get_raw_transaction(self, txid):
+        LOG.info("Retrieving transaction from the DID sidechain...")
+        payload = {
+            "method": "getrawtransaction",
+            "params": {
+                "txid": txid,
+                "verbose": True
+            }
+        }
+        try:
+            response = requests.post(self.did_sidechain_rpc_url, json=payload).json()
+            return response
+        except Exception as e:
+            LOG.info(f"Error while getting raw transaction for a txid: {e}")
+            return None
+
+    def send_raw_transaction(self, transactions):
+        LOG.info("Sending transactions to the DID sidechain...")
+        payload = {
+            "method": "sendrawtransaction",
+            "params": transactions
+        }
+        try:
+            response = requests.post(self.did_sidechain_rpc_url, json=payload).json()
+            return response
+        except Exception as e:
+            LOG.info(f"Error while sending transactions to the DID sidechain: {e}")
+            return None
+
+    def get_documents_specific_did(self, did):
+        documents = {}
+        result = self.get_previous_did_document(did)
+        if result:
+            transactions = result["transaction"]
+            # Only deal with the last 5 DID documents
+            for tx in transactions[:5]:
+                # Need to add some extra padding so TypeError is not thrown sometimes
+                payload = base64.b64decode(tx["operation"]["payload"] + "===").decode("utf-8")
+                payload_json = json.loads(payload)
+
+                verifiable_creds = []
+                if "verifiableCredential" in payload_json.keys():
+                    creds = payload_json["verifiableCredential"]
+                    for cred in creds:
+                        verifiable_cred = {
+                            "id": cred["id"],
+                            "issuance_date": cred["issuanceDate"],
+                            "subject": cred["credentialSubject"],
+                            "expiration_date": cred["expirationDate"],
+                            "type": cred["type"]
+                        }
+                        if "issuer" in cred.keys():
+                            verifiable_cred["issuer"] = cred["issuer"]
+                        verifiable_creds.append(verifiable_cred)
+
+                documents[tx["txid"]] = {
+                    "published": tx["timestamp"],
+                    "verifiable_creds": verifiable_creds
+                }
+        return documents
+
+    def get_utxos(self, addresses):
+        payload = {
+            "method": "listunspent",
+            "params": {
+                "addresses": addresses
+            }
+        }
+        response = requests.post(self.did_sidechain_rpc_url, json=payload).json()
+        lowest_value = 0
+        for x in response["result"]:
+            if (float(x["amount"]) > 0.000001) and (lowest_value == 0 or (float(x["amount"]) < lowest_value)):
+                lowest_value = float(x["amount"])
+                selected_response = x
+        return selected_response["txid"], selected_response["assetid"], selected_response["amount"], selected_response[
+            "vout"]
