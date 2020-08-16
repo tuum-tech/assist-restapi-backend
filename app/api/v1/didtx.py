@@ -3,12 +3,12 @@
 import base64
 import json
 
-from app import log, config
+from app import log, config, DidPublish
 from app.api.common import BaseResource
 from app.model import Didtx
 from app.model import Servicecount
 from app.errors import (
-    AppError,
+    AppError, InvalidParameterError,
 )
 
 LOG = log.get_logger()
@@ -98,7 +98,14 @@ class Create(BaseResource):
 
         payload = did_request["payload"]
         payload_json = json.loads(base64.b64decode(payload + "===").decode("utf-8"))
+
         did = payload_json["id"].replace("did:elastos:", "").split("#")[0]
+
+        # First verify whether this is a valid payload
+        did_publish = DidPublish()
+        tx = did_publish.create_raw_transaction(did, did_request)
+        if not tx:
+            raise InvalidParameterError(description="Could not generate a valid transaction out of the given didRequest")
 
         # TODO: Verify whether the did_request is valid/authenticated
 
@@ -107,11 +114,11 @@ class Create(BaseResource):
 
         result = {}
         # Check if the row already exists with the same didRequest
-        transactionSent = self.transaction_already_sent(did, did_request, memo)
-        if transactionSent:
+        transaction_sent = self.transaction_already_sent(did, did_request, memo)
+        if transaction_sent:
             result["duplicate"] = True
             result["service_count"] = count
-            result["confirmation_id"] = str(transactionSent.id)
+            result["confirmation_id"] = str(transaction_sent.id)
         else: 
             # If less than limit, increment and allow, otherwise, not allowed as max limit is reached
             if count < config.SERVICE_DIDPUBLISH_DAILY_LIMIT:

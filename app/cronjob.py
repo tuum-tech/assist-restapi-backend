@@ -5,8 +5,6 @@ import sys
 import datetime
 import json
 
-from app.api.v1 import servicecount
-
 from app import log, config
 
 from app.model import Didtx, DidDocument, Servicecount
