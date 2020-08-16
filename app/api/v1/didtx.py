@@ -3,10 +3,11 @@
 import base64
 import json
 
-from app import log, config, DidPublish
+from app import log, config
 from app.api.common import BaseResource
 from app.model import Didtx
 from app.model import Servicecount
+from app.service import DidPublish
 from app.errors import (
     AppError, InvalidParameterError,
 )

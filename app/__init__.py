@@ -16,8 +16,6 @@ from app.model import Didtx
 from app.model import DidDocument
 from app.model import Didstate
 
-from app.service import DidPublish
-
 from app.cronjob import cron_send_tx_to_did_sidechain, cron_reset_didpublish_daily_limit, \
     cron_update_recent_did_documents, cron_send_daily_stats
 
