@@ -5,7 +5,7 @@ import datetime
 from app.api.common import BaseResource
 from app.model import DidDocument
 
-from app.service import DidPublish, get_documents_specific_did
+from app.service import DidSidechainRpc
 
 LOG = log.get_logger()
 
@@ -24,10 +24,10 @@ class GetDidDocumentsFromDid(BaseResource):
             row.num_searches += 1
             row.last_searched = datetime.datetime.utcnow()
         else:
-            did_publish = DidPublish()
+            did_sidechain_rpc = DidSidechainRpc()
             row = DidDocument(
                 did=did,
-                documents=get_documents_specific_did(did_publish, did),
+                documents=did_sidechain_rpc.get_documents_specific_did(did),
                 num_searches=1,
                 last_searched=datetime.datetime.utcnow()
             )

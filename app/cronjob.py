@@ -3,20 +3,85 @@ import binascii
 import itertools
 import sys
 import datetime
+import json
+
+from app.api.v1 import servicecount
 
 from app import log, config
 
 from app.model import Didtx, DidDocument, Servicecount
 from app.model import Didstate
 
-from app.service import DidPublish, get_documents_specific_did
+from app.service import DidPublish, DidSidechainRpc, get_service_count, send_email
 
 LOG = log.get_logger()
 
 did_publish = DidPublish()
+did_sidechain_rpc = DidSidechainRpc()
 
 
-def update_recent_did_documents():
+def cron_send_daily_stats():
+    to_email = config.EMAIL["SENDER"]
+    subject = "Assist Backend Daily Stats"
+
+    wallets = "<table><tr><th>Address</th><th>Balance</th></tr>"
+    for wallet in config.WALLETS:
+        address = wallet["address"]
+        balance = did_sidechain_rpc.get_balance(address)
+        wallets += f"<tr><td>{address}</td><td>{balance}</td></tr>"
+    wallets += "</table>"
+
+    quarantined_transactions = "<table><tr><th>Transaction ID</th><th>DID</th><th>From</th><th>Extra " \
+                               "Info</th><th>Created</th></tr>"
+    for transaction in Didtx.objects(status=config.SERVICE_STATUS_QUARANTINE):
+        id = transaction.id
+        did = transaction.did
+        request_from = transaction.requestFrom
+        created = transaction.created
+        extra_info = json.dumps(transaction.extraInfo)
+        quarantined_transactions += f"<tr><td>{id}</td><td>{did}</td><td>{request_from}</td><td>{extra_info}</td><td>{created}</td></tr>"
+    quarantined_transactions += "</table>"
+
+    service_stats = "<table><tr><th>Service</th><th>Users</th><th>Today</th><th>All time</th></tr>"
+    for service, stats in get_service_count().items():
+        service_stats += f"<tr><td>{service}</td><td>{stats['users']}</td><td>{stats['today']}</td><td>{stats['total']}</td></tr>"
+    service_stats += "</table>"
+
+    content_html = f"""
+        <html>
+        <head>
+            <style>
+            table {{
+              font-family: arial, sans-serif;
+              border-collapse: collapse;
+              width: 100%;
+            }}
+            
+            td, th {{
+              border: 1px solid #dddddd;
+              text-align: left;
+              padding: 8px;
+            }}
+            
+            tr:nth-child(even) {{
+              background-color: #dddddd;
+            }}
+            </style>
+        </head>
+        <body>
+            <h2>Wallets and Current Balances</h2>
+            {wallets}
+            <h2>Service Stats</h2>
+            {service_stats}
+            <h2>Quarantined Transactions</h2>
+            {quarantined_transactions}
+        </body>
+        </html>
+    """
+    send_email(to_email, subject, content_html)
+
+
+def cron_update_recent_did_documents():
     LOG.info('Running cron job: update_recent_did_documents')
     rows = DidDocument.objects()
     for row in rows:
@@ -27,11 +92,11 @@ def update_recent_did_documents():
                      f"save some space")
             row.delete()
         else:
-            row.documents = get_documents_specific_did(did_publish, row.did)
+            row.documents = did_sidechain_rpc.get_documents_specific_did(row.did)
             row.save()
 
 
-def reset_didpublish_daily_limit():
+def cron_reset_didpublish_daily_limit():
     LOG.info('Running cron job: reset_didpublish_daily_limit')
     rows = Servicecount.objects()
     for row in rows:
@@ -50,10 +115,10 @@ def reset_didpublish_daily_limit():
             row.save()
 
 
-def send_tx_to_did_sidechain():
+def cron_send_tx_to_did_sidechain():
     LOG.info('Running cron job: send_tx_to_did_sidechain')
     # Verify the DID sidechain is reachable
-    response = did_publish.get_block_count()
+    response = did_sidechain_rpc.get_block_count()
     if not (response and response["result"]):
         LOG.info("DID sidechain is currently not reachable...")
         return
@@ -89,7 +154,9 @@ def send_tx_to_did_sidechain():
             LOG.info("Pending: Found transactions. Sending " + str(len(pending_transactions)) + " transactions to DID "
                                                                                                 "sidechain now...")
             # Send transaction to DID sidechain
-            response = did_publish.send_raw_transaction(pending_transactions)
+            response = did_sidechain_rpc.send_raw_transaction(pending_transactions)
+            if not response:
+                return
             tx_id = response["result"]
             for row in rows_pending:
                 # If for whatever reason, the transactions fail, put them in quarantine and come back to it later
@@ -111,7 +178,7 @@ def send_tx_to_did_sidechain():
         # Get info about all the transactions and save them to the database
         rows_processing = Didtx.objects(status=config.SERVICE_STATUS_PROCESSING)
         for row in rows_processing:
-            blockchain_tx = did_publish.get_raw_transaction(row.blockchainTxId)
+            blockchain_tx = did_sidechain_rpc.get_raw_transaction(row.blockchainTxId)
             row.blockchainTx = blockchain_tx
             LOG.info("Processing: Blockchain transaction info from wallet: " +
                      did_publish.wallets[did_publish.current_wallet_index]["address"] + " for id: " + str(
@@ -170,7 +237,9 @@ def binary_split_resend(rows_quarantined):
                 "Binary split in pass: " + str(x) + " from " + str(round(len(rows_quarantined) / 2)) + " to " + str(
                     len(rows_quarantined)) + " total array length: " + str(len(rows_quarantined)))
 
-        response = did_publish.send_raw_transaction(q_half_array)
+        response = did_sidechain_rpc.send_raw_transaction(q_half_array)
+        if not response:
+            return
         tx_id = response["result"]
         if tx_id:
             # If transactions are good set the status to "Processing"

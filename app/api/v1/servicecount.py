@@ -3,6 +3,7 @@
 from app import log
 from app.api.common import BaseResource
 from app.model import Servicecount
+from app.service import get_service_count
 
 LOG = log.get_logger()
 
@@ -37,26 +38,5 @@ class GetServiceCountAllServices(BaseResource):
 
     def on_get(self, req, res):
         LOG.info(f'Enter /v1/service_count/statistics')
-        rows = Servicecount.objects()
-
-        # Add a new service to this array in the future
-        services = ["did_publish"]
-
-        obj = {}
-        for service in services:
-            obj[service] = {
-                "users": 0,
-                "today": 0,
-                "total": 0
-            }
-
-        if rows:
-            for item in rows:
-                row = item.as_dict()
-                for service in services:
-                    if service in row["data"].keys():
-                        obj[service]["users"] += 1
-                        obj[service]["today"] += row["data"][service]["count"]
-                        obj[service]["total"] += row["data"][service]["total_count"]
-
-        self.on_success(res, obj)
+        result = get_service_count()
+        self.on_success(res, result)

@@ -7,11 +7,12 @@ import hashlib
 import ecdsa
 from app.blockchain import tx_ela
 import random
-import requests
 from electrumx.lib.hash import hex_str_to_hash
 from electrumx.lib.util import pack_varint
 
 from app import log, config
+
+from app.service import DidSidechainRpc
 
 LOG = log.get_logger()
 
@@ -21,52 +22,7 @@ class DidPublish(object):
     def __init__(self):
         self.wallets = config.WALLETS
         self.current_wallet_index = 0
-        self.did_sidechain_rpc_url = config.DID_SIDECHAIN_RPC_URL
         self.did_sidechain_fee = 0.000001
-
-    def get_block_count(self):
-        LOG.info("Retrieving current block count..")
-        payload = {
-            "method": "getblockcount",
-        }
-        try:
-            response = requests.post(self.did_sidechain_rpc_url, json=payload).json()
-            return response
-        except:
-            return None
-
-    def get_previous_did_document(self, did):
-        LOG.info("Retrieving previous DID document if available from the DID sidechain...")
-        payload = {
-            "method": "resolvedid",
-            "params": {
-                "did": did,
-                "all": True
-            }
-        }
-        response = requests.post(self.did_sidechain_rpc_url, json=payload).json()
-        return response
-
-    def get_raw_transaction(self, txid):
-        LOG.info("Retrieving transaction from the DID sidechain...")
-        payload = {
-            "method": "getrawtransaction",
-            "params": {
-                "txid": txid,
-                "verbose": True
-            }
-        }
-        response = requests.post(self.did_sidechain_rpc_url, json=payload).json()
-        return response
-
-    def send_raw_transaction(self, transactions):
-        LOG.info("Sending transactions to the DID sidechain...")
-        payload = {
-            "method": "sendrawtransaction",
-            "params": transactions
-        }
-        response = requests.post(self.did_sidechain_rpc_url, json=payload).json()
-        return response
 
     def create_raw_transaction(self, did, json_payload):
         LOG.info("Creating raw transaction...")
@@ -77,8 +33,10 @@ class DidPublish(object):
         payload = json_payload["payload"]
 
         try:
-            utxo_txid, asset_id, value, prev_idx = self.get_utxos()
-            wallet_exhausted = 0 
+            did_sidechain_rpc = DidSidechainRpc()
+            addresses = [self.wallets[self.current_wallet_index]["address"]]
+            utxo_txid, asset_id, value, prev_idx = did_sidechain_rpc.get_utxos(addresses)
+            wallet_exhausted = 0
             while float(value) < 0.000001:
                 if wallet_exhausted == config.NUM_WALLETS:
                     LOG.info("None of the wallets have enough UTXOs to send a transaction")
@@ -86,23 +44,22 @@ class DidPublish(object):
                 self.current_wallet_index += 1
                 if self.current_wallet_index > config.NUM_WALLETS - 1:
                     self.current_wallet_index = 0
-                utxo_txid, asset_id, value, prev_idx = self.get_utxos()
+                utxo_txid, asset_id, value, prev_idx = self.get_utxos(addresses)
                 wallet_exhausted += 1
 
             change = int((10 ** 8) * (float(value) - self.did_sidechain_fee))
             previous_txid = ""
-            if(operation == "update"):
-                #previous_did_document = self.get_previous_did_document(did)
-                #previous_txid = previous_did_document["result"]["transaction"][0]["txid"]
+            if operation == "update":
                 previous_txid = json_payload["header"]["previousTxid"]
             tx_header = tx_ela.DIDHeaderInfo(specification=str.encode(spec), operation=str.encode(operation),
-                                            previoustxid=str.encode(previous_txid))
+                                             previoustxid=str.encode(previous_txid))
 
             tx_proof = tx_ela.DIDProofInfo(type=b"ECDSAsecp256r1", verification_method=str.encode(verification),
-                                        signature=str.encode(signature))
+                                           signature=str.encode(signature))
             tx_payload = tx_ela.TxPayloadDIDOperation(header=tx_header, payload=str.encode(payload),
-                                                    proof=tx_proof).serialize()
-            sender_hashed_public_key = self.address_to_programhash(self.wallets[self.current_wallet_index]["address"], False)
+                                                      proof=tx_proof).serialize()
+            sender_hashed_public_key = self.address_to_programhash(self.wallets[self.current_wallet_index]["address"],
+                                                                   False)
             did_hashed = self.address_to_programhash(did, False)
 
             # Variables needed for raw_tx
@@ -113,9 +70,9 @@ class DidPublish(object):
             program_count = struct.pack("<B", 1)  # one byte
             tx_attributes = tx_ela.TxAttribute(usage=129, data=b'1234567890').serialize()
             tx_input = tx_ela.TxInputELA(prev_hash=hex_str_to_hash(utxo_txid), prev_idx=prev_idx,
-                                        sequence=0).serialize()
-            # DID requires 2 outputs.  The first one is DID string with amount 0 and the second one is change address and
-            # amount.  Fee is about 100 sela (.000001 ELA)
+                                         sequence=0).serialize()
+            # DID requires 2 outputs.  The first one is DID string with amount 0 and the second one is change address
+            # and amount.  Fee is about 100 sela (.000001 ELA)
             output1 = tx_ela.TxOutputELA(
                 asset_id=hex_str_to_hash(asset_id),
                 value=0, output_lock=0, pk_script=did_hashed, output_type=None, output_payload=None).serialize(
@@ -125,7 +82,8 @@ class DidPublish(object):
                 value=change, output_lock=0, pk_script=sender_hashed_public_key, output_type=None,
                 output_payload=None).serialize(tx_ela.TransferAsset)
 
-            raw_tx_string = (tx_type + payload_version + tx_payload + program_count + tx_attributes + program_count + tx_input + output_count + output1 + output2 + lock_time)
+            raw_tx_string = (
+                        tx_type + payload_version + tx_payload + program_count + tx_attributes + program_count + tx_input + output_count + output1 + output2 + lock_time)
 
             code = self.get_code_from_pb()
             signature = self.ecdsa_sign(raw_tx_string)
@@ -134,7 +92,8 @@ class DidPublish(object):
             code_bytes = bytes.fromhex(code)
             script = (pack_varint(len(parameter_bytes)) + parameter_bytes + pack_varint(len(code_bytes)) + code_bytes)
 
-            real_tx = (tx_type + payload_version + tx_payload + program_count + tx_attributes + program_count + tx_input + output_count + output1 + output2 + lock_time + program_count + script)
+            real_tx = (
+                        tx_type + payload_version + tx_payload + program_count + tx_attributes + program_count + tx_input + output_count + output1 + output2 + lock_time + program_count + script)
 
             return real_tx
         except Exception as err:
@@ -207,17 +166,3 @@ class DidPublish(object):
         else:
             return programhash
 
-    def get_utxos(self):
-        payload = {
-            "method": "listunspent",
-            "params": {
-                "addresses": [self.wallets[self.current_wallet_index]["address"]]
-            }
-        }
-        response = requests.post(self.did_sidechain_rpc_url, json=payload).json()
-        lowest_value = 0
-        for x in response["result"]:
-            if (float(x["amount"]) > 0.000001) and (lowest_value == 0 or (float(x["amount"]) < lowest_value)):
-                lowest_value = float(x["amount"])
-                selected_response = x
-        return selected_response["txid"], selected_response["assetid"], selected_response["amount"], selected_response["vout"]

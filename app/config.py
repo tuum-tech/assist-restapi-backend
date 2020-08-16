@@ -34,6 +34,7 @@ SERVICE_MEDIAUPLOAD = "media_upload"  # Unused service
 # Service Limits
 SERVICE_DIDPUBLISH_DAILY_LIMIT = config("DID_PUBLISH_DAILY_LIMIT", default=5, cast=int)
 
+
 def get_wallets():
     wallets = []
     i = 1
@@ -58,3 +59,11 @@ def get_wallets():
 WALLETS = get_wallets()
 NUM_WALLETS = len(WALLETS)
 
+EMAIL = {
+    "SENDER": config('EMAIL_SENDER', default="test@test.com", cast=str),
+    "SMTP_SERVER": config('EMAIL_SMTP_SERVER', default="smtp.example.com", cast=str),
+    "SMTP_PORT": config('EMAIL_SMTP_PORT', default="", cast=str),
+    "SMTP_USERNAME": config('EMAIL_SMTP_USERNAME', default="support@example.com", cast=str),
+    "SMTP_PASSWORD": config('EMAIL_SMTP_PASSWORD', default="password", cast=str),
+    "SMTP_TLS": config('EMAIL_SMTP_TLS', default=False, cast=bool),
+}

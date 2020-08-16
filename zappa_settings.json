@@ -8,16 +8,20 @@
         "aws_region": "us-east-1",
         "events": [
             {
-                "function": "app.cronjob.send_tx_to_did_sidechain",
+                "function": "app.cronjob.cron_send_tx_to_did_sidechain",
                 "expression": "rate(2 minutes)"
             },
             {
-                "function": "app.cronjob.reset_didpublish_daily_limit",
+                "function": "app.cronjob.cron_reset_didpublish_daily_limit",
                 "expression": "cron(0 0 * * ? *)"
             },
             {
-                "function": "app.cronjob.update_recent_did_documents",
+                "function": "app.cronjob.cron_update_recent_did_documents",
                 "expression": "rate(2 minutes)"
+            },
+            {
+                "function": "app.cronjob.cron_send_daily_stats",
+                "expression": "cron(0 0 * * ? *)"
             }
         ],
         "keep_warm": false
