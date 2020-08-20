@@ -143,7 +143,7 @@ def cron_send_tx_to_did_sidechain():
         rows_pending = Didtx.objects(status=config.SERVICE_STATUS_PENDING)
         for row in rows_pending:
             time_since_created = datetime.datetime.utcnow() - row.created
-            if time_since_created.minutes > 60:
+            if (time_since_created.seconds / 60.0) > 60:
                 LOG.info(
                     f"The id '{row.id}' with DID '{row.did}' has been in Pending state for the last hour. Changing its state to Cancelled")
                 row.status = config.SERVICE_STATUS_CANCELLED
