@@ -44,7 +44,7 @@ class DidPublish(object):
                 self.current_wallet_index += 1
                 if self.current_wallet_index > config.NUM_WALLETS - 1:
                     self.current_wallet_index = 0
-                utxo_txid, asset_id, value, prev_idx = self.get_utxos(addresses)
+                utxo_txid, asset_id, value, prev_idx = did_sidechain_rpc.get_utxos(addresses)
                 wallet_exhausted += 1
 
             change = int((10 ** 8) * (float(value) - self.did_sidechain_fee))

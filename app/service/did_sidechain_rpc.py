@@ -20,7 +20,7 @@ class DidSidechainRpc(object):
             "method": "getblockcount",
         }
         try:
-            response = requests.post(self.did_sidechain_rpc_url, json=payload).json()
+            response = requests.post(self.did_sidechain_rpc_url, json=payload, timeout=config.REQUEST_TIMEOUT).json()
             return response
         except Exception as e:
             LOG.info(f"Error while getting block count: {e}")
@@ -33,9 +33,12 @@ class DidSidechainRpc(object):
             "params": {"address": address}
         }
         balance = 0
-        response = requests.post(self.did_sidechain_rpc_url, json=payload).json()
-        if response and response["result"]:
-            balance = response["result"]
+        try:
+            response = requests.post(self.did_sidechain_rpc_url, json=payload, timeout=config.REQUEST_TIMEOUT).json()
+            if response and response["result"]:
+                balance = response["result"]
+        except Exception as e:
+            LOG.info(f"Error while retrieving balance for an address: {e}")
         return balance
 
     def get_previous_did_document(self, did):
@@ -48,9 +51,12 @@ class DidSidechainRpc(object):
             }
         }
         document = {}
-        response = requests.post(self.did_sidechain_rpc_url, json=payload).json()
-        if response and response["result"]:
-            document = response["result"]
+        try:
+            response = requests.post(self.did_sidechain_rpc_url, json=payload, timeout=config.REQUEST_TIMEOUT).json()
+            if response and response["result"]:
+                document = response["result"]
+        except Exception as e:
+            LOG.info(f"Error while getting previous DID document: {e}")
         return document
 
     def get_raw_transaction(self, txid):
@@ -63,7 +69,7 @@ class DidSidechainRpc(object):
             }
         }
         try:
-            response = requests.post(self.did_sidechain_rpc_url, json=payload).json()
+            response = requests.post(self.did_sidechain_rpc_url, json=payload, timeout=config.REQUEST_TIMEOUT).json()
             return response
         except Exception as e:
             LOG.info(f"Error while getting raw transaction for a txid: {e}")
@@ -76,7 +82,7 @@ class DidSidechainRpc(object):
             "params": transactions
         }
         try:
-            response = requests.post(self.did_sidechain_rpc_url, json=payload).json()
+            response = requests.post(self.did_sidechain_rpc_url, json=payload, timeout=config.REQUEST_TIMEOUT).json()
             return response
         except Exception as e:
             LOG.info(f"Error while sending transactions to the DID sidechain: {e}")
@@ -121,11 +127,15 @@ class DidSidechainRpc(object):
                 "addresses": addresses
             }
         }
-        response = requests.post(self.did_sidechain_rpc_url, json=payload).json()
-        lowest_value = 0
-        for x in response["result"]:
-            if (float(x["amount"]) > 0.000001) and (lowest_value == 0 or (float(x["amount"]) < lowest_value)):
-                lowest_value = float(x["amount"])
-                selected_response = x
-        return selected_response["txid"], selected_response["assetid"], selected_response["amount"], selected_response[
-            "vout"]
+        try:
+            response = requests.post(self.did_sidechain_rpc_url, json=payload, timeout=config.REQUEST_TIMEOUT).json()
+            lowest_value = 0
+            for x in response["result"]:
+                if (float(x["amount"]) > 0.000001) and (lowest_value == 0 or (float(x["amount"]) < lowest_value)):
+                    lowest_value = float(x["amount"])
+                    selected_response = x
+            return selected_response["txid"], selected_response["assetid"], selected_response["amount"], selected_response[
+                "vout"]
+        except Exception as e:
+            LOG.info(f"Error while getting UTXOs from the DID sidechain: {e}")
+            return None, None, None, None

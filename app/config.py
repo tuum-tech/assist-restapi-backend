@@ -12,6 +12,8 @@ DEBUG = True
 
 CRON_INTERVAL = config('CRON_INTERVAL', default=100, cast=int)
 
+REQUEST_TIMEOUT = 30
+
 MONGO = {
     "DATABASE": config('MONGO_DATABASE'),
     "HOST": config('MONGO_HOST'),
