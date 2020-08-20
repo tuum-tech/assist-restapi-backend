@@ -142,9 +142,14 @@ def cron_send_tx_to_did_sidechain():
         # Create raw transactions
         rows_pending = Didtx.objects(status=config.SERVICE_STATUS_PENDING)
         for row in rows_pending:
+            time_since_created = datetime.datetime.utcnow() - row.created
+            if time_since_created.minutes > 60:
+                LOG.info(
+                    f"The id '{row.id}' with DID '{row.did}' has been in Pending state for the last hour. Changing its state to Cancelled")
+                row.status = config.SERVICE_STATUS_CANCELLED
             tx = did_publish.create_raw_transaction(row.did, row.didRequest)
             if not tx:
-                return
+                continue
             tx_decoded = binascii.hexlify(tx).decode(encoding="utf-8")
             pending_transactions.append(tx_decoded)
 

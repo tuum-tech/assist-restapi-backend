@@ -18,18 +18,24 @@ class GetDidDocumentsFromDid(BaseResource):
     def on_get(self, req, res, did):
         LOG.info(f'Enter /v1/documents/did/{did}')
         did = did.replace("did:elastos:", "").split("#")[0]
+        result = {}
         rows = DidDocument.objects(did=did)
         if rows:
             row = rows[0]
             row.num_searches += 1
             row.last_searched = datetime.datetime.utcnow()
+            row.save()
+            result = row.as_dict()
         else:
             did_sidechain_rpc = DidSidechainRpc()
-            row = DidDocument(
-                did=did,
-                documents=did_sidechain_rpc.get_documents_specific_did(did),
-                num_searches=1,
-                last_searched=datetime.datetime.utcnow()
-            )
-        row.save()
-        self.on_success(res, row.as_dict())
+            documents = did_sidechain_rpc.get_documents_specific_did(did)
+            if documents:
+                row = DidDocument(
+                    did=did,
+                    documents=documents,
+                    num_searches=1,
+                    last_searched=datetime.datetime.utcnow()
+                )
+                row.save()
+                result = row.as_dict()
+        self.on_success(res, result)
