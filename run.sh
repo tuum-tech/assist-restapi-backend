@@ -25,7 +25,7 @@ function start () {
     ;;
     esac
 
-    gunicorn -b 0.0.0.0:8000 --reload app:application
+    gunicorn -b 0.0.0.0:8000 --reload app:application --threads 4 --timeout 300 --graceful-timeout 300
 }
 
 function stop () {

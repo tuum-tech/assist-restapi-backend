@@ -72,7 +72,6 @@ application = App(middleware=[
     AuthMiddleware(),
 ])
 
-
 # Start cron scheduler
 if not config.PRODUCTION:
     scheduler = BackgroundScheduler()

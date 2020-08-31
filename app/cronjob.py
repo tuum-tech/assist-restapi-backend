@@ -99,7 +99,7 @@ def cron_reset_didpublish_daily_limit():
     rows = Servicecount.objects()
     for row in rows:
         if config.SERVICE_DIDPUBLISH in row.data.keys():
-            did_txs = Didtx.objects()
+            did_txs = Didtx.objects(did=row.did)
             result = {}
             for tx in did_txs:
                 if tx.did in result.keys():
