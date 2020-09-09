@@ -147,6 +147,7 @@ def cron_send_tx_to_did_sidechain():
                 LOG.info(
                     f"The id '{row.id}' with DID '{row.did}' has been in Pending state for the last hour. Changing its state to Cancelled")
                 row.status = config.SERVICE_STATUS_CANCELLED
+                row.save()
                 continue
             tx = did_publish.create_raw_transaction(row.did, row.didRequest)
             if not tx:
