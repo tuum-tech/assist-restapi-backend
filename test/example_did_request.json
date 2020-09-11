@@ -1,7 +1,7 @@
 {
-  "didId": "org.elastos.trinity.dapp.did",
+  "did": "did:elastos:ii4ZCz8LYRHax3YB79SWJcMM2hjaHT35KN",
   "memo": "test4",
-  "requestFrom": "ok",
+  "requestFrom": "org.trinity.feeds",
   "didRequest": {
     "header": {
       "specification": "elastos/did/1.0",

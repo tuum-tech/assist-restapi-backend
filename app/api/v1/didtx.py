@@ -97,10 +97,7 @@ class Create(BaseResource):
         did_request = data["didRequest"]
         memo = data["memo"]
 
-        payload = did_request["payload"]
-        payload_json = json.loads(base64.b64decode(payload + "===").decode("utf-8"))
-
-        did = payload_json["id"].replace("did:elastos:", "").split("#")[0]
+        did = data["did"].replace("did:elastos:", "").split("#")[0]
 
         # First verify whether this is a valid payload
         did_publish = DidPublish()
