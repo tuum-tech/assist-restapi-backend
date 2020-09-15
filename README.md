@@ -49,13 +49,17 @@ curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didt
 ```
 curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didtx/did/ii4ZCz8LYRhax3YB39SWJcMM2hjaHT35KD
 ```
-- To retrieve recent 5 transactions for a particular DID:
+- To retrieve recent 5 requests for a particular DID:
 ```
 curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didtx/recent/did/ii4ZCz8LYRhax3YB39SWJcMM2hjaHT35KD
 ```
 - To retrieve recent 5 DID documents published for a particular DID:
 ```
 curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/documents/did/ii4ZCz8LYRhax3YB39SWJcMM2hjaHT35KD
+```
+- To retrieve recent 5 DID documents published for a particular DID from a cryptoname:
+```
+curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/documents/crypto_name/kpwoods
 ```
 - To retrieve service count for did_publish service for a particular DID:
 ```

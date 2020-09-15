@@ -14,6 +14,16 @@ class DidSidechainRpc(object):
     def __init__(self):
         self.did_sidechain_rpc_url = config.DID_SIDECHAIN_RPC_URL
 
+    def get_did_from_cryptoname(self, crypto_name):
+        LOG.info("Retrieving DID from cryptoname..")
+        try:
+            crypto_name_url = f"https://{crypto_name}.elastos.name/did"
+            response = requests.get(crypto_name_url, timeout=config.REQUEST_TIMEOUT).text
+            return response
+        except Exception as e:
+            LOG.info(f"Error while getting DID from cryptoname: {e}")
+            return None
+
     def get_block_count(self):
         LOG.info("Retrieving current block count..")
         payload = {
@@ -92,7 +102,9 @@ class DidSidechainRpc(object):
         documents = {}
         result = self.get_previous_did_document(did)
         if result:
-            transactions = result["transaction"]
+            transactions = result.get("transaction", None)
+            if not transactions:
+                return documents
             # Only deal with the last 5 DID documents
             for tx in transactions[:5]:
                 # Need to add some extra padding so TypeError is not thrown sometimes

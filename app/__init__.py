@@ -43,6 +43,8 @@ class App(falcon.API):
 
         # Retrieves the last 5 DID documents published for a particular DID
         self.add_route("/v1/documents/did/{did}", did_document.GetDidDocumentsFromDid())
+        # Retrieves the last 5 DID documents published for a particular DID from a cryptoname
+        self.add_route("/v1/documents/crypto_name/{crypto_name}", did_document.GetDidDocumentsFromCryptoname())
 
         # Retrieves the service count for a particular DID
         self.add_route("/v1/service_count/{service}/{did}", servicecount.GetServiceCountSpecificDidAndService())
