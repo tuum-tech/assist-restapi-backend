@@ -22,12 +22,21 @@ def cron_send_daily_stats():
     to_email = config.EMAIL["SENDER"]
     subject = "Assist Backend Daily Stats"
 
-    wallets = "<table><tr><th>Address</th><th>Balance</th></tr>"
+    wallets = "<table><tr><th>Address</th><th>Balance</th><th>Type</th></tr>"
+    # Used for testing purposes
+    test_address = "EKsSQae7goc5oGGxwvgbUxkMsiQhC9ZfJ3"
+    test_balance = did_sidechain_rpc.get_balance(test_address)
+    wallets += f"<tr><td>{test_address}</td><td>{test_balance}</td><td>Testing</td></tr>"
     for wallet in config.WALLETS:
         address = wallet["address"]
         balance = did_sidechain_rpc.get_balance(address)
-        wallets += f"<tr><td>{address}</td><td>{balance}</td></tr>"
+        wallets += f"<tr><td>{address}</td><td>{balance}</td><td>Production</td></tr>"
     wallets += "</table>"
+
+    service_stats = "<table><tr><th>Service</th><th>Users</th><th>Today</th><th>All time</th></tr>"
+    for service, stats in get_service_count().items():
+        service_stats += f"<tr><td>{service}</td><td>{stats['users']}</td><td>{stats['today']}</td><td>{stats['total']}</td></tr>"
+    service_stats += "</table>"
 
     quarantined_transactions = "<table><tr><th>Transaction ID</th><th>DID</th><th>From</th><th>Extra " \
                                "Info</th><th>Created</th></tr>"
@@ -40,10 +49,18 @@ def cron_send_daily_stats():
         quarantined_transactions += f"<tr><td>{id}</td><td>{did}</td><td>{request_from}</td><td>{extra_info}</td><td>{created}</td></tr>"
     quarantined_transactions += "</table>"
 
-    service_stats = "<table><tr><th>Service</th><th>Users</th><th>Today</th><th>All time</th></tr>"
-    for service, stats in get_service_count().items():
-        service_stats += f"<tr><td>{service}</td><td>{stats['users']}</td><td>{stats['today']}</td><td>{stats['total']}</td></tr>"
-    service_stats += "</table>"
+    stale_processing_transactions = "<table><tr><th>Transaction ID</th><th>DID</th><th>From</th><th>Extra " \
+                               "Info</th><th>Created</th></tr>"
+    for transaction in Didtx.objects(status=config.SERVICE_STATUS_PROCESSING):
+        time_since_created = datetime.datetime.utcnow() - transaction.created
+        if (time_since_created.seconds / 60.0) > 60:
+            id = transaction.id
+            did = transaction.did
+            request_from = transaction.requestFrom
+            created = transaction.created
+            extra_info = json.dumps(transaction.extraInfo)
+            stale_processing_transactions += f"<tr><td>{id}</td><td>{did}</td><td>{request_from}</td><td>{extra_info}</td><td>{created}</td></tr>"
+    stale_processing_transactions += "</table>"
 
     content_html = f"""
         <html>
@@ -73,6 +90,8 @@ def cron_send_daily_stats():
             {service_stats}
             <h2>Quarantined Transactions</h2>
             {quarantined_transactions}
+            <h2>Stale Processing Transactions(Over 1 hour)</h2>
+            {stale_processing_transactions}
         </body>
         </html>
     """
