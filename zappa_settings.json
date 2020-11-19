@@ -12,10 +12,6 @@
                 "expression": "rate(2 minutes)"
             },
             {
-                "function": "app.cronjob.cron_reset_didpublish_daily_limit",
-                "expression": "cron(5 0 * * ? *)"
-            },
-            {
                 "function": "app.cronjob.cron_update_recent_did_documents",
                 "expression": "rate(2 minutes)"
             },

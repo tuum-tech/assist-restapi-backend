@@ -2,8 +2,8 @@
 import binascii
 import itertools
 import sys
-import datetime
 import json
+from datetime import datetime
 
 from app import log, config
 
@@ -23,12 +23,13 @@ def cron_send_daily_stats():
     to_email = config.EMAIL["SENDER"]
     subject = "Assist Backend Daily Stats"
 
+    current_time = datetime.utcnow().strftime("%a, %b %d, %Y @ %I:%M:%S %p")
     slack_blocks = [
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "These are the daily stats for Assist"
+                "text": f"These are the daily stats for Assist for {current_time}"
             }
         },
         {
@@ -111,8 +112,8 @@ def cron_send_daily_stats():
         }
     })
     for transaction in Didtx.objects(status=config.SERVICE_STATUS_PROCESSING):
-        time_since_created = datetime.datetime.utcnow() - transaction.created
-        if (time_since_created.seconds / 60.0) > 60:
+        time_since_created = datetime.utcnow() - transaction.created
+        if (time_since_created.total_seconds() / 60.0) > 60:
             id = transaction.id
             did = transaction.did
             request_from = transaction.requestFrom
@@ -147,36 +148,23 @@ def cron_send_daily_stats():
             </style>
         </head>
         <body>
-            <h2>Wallets and Current Balances</h2>
+            <h2>These are the daily stats for Assist for {current_time}</h1>
+            <h3>Wallets and Current Balances</h3>
             {wallets_stats}
-            <h2>Service Stats</h2>
+            <h3>Service Stats</h3>
             {service_stats}
-            <h2>DID Transactions</h2>
+            <h3>DID Transactions</h3>
             {didtx_stats}
-            <h2>Quarantined Transactions</h2>
+            <h3>Quarantined Transactions</h3>
             {quarantined_transactions}
-            <h2>Stale Processing Transactions(Over 1 hour)</h2>
+            <h3>Stale Processing Transactions(Over 1 hour)</h3>
             {stale_processing_transactions}
         </body>
         </html>
     """
     send_email(to_email, subject, content_html)
     send_slack_notification(slack_blocks)
-
-
-def cron_update_recent_did_documents():
-    LOG.info('Running cron job: update_recent_did_documents')
-    rows = DidDocument.objects()
-    for row in rows:
-        time_since_last_searched = datetime.datetime.utcnow() - row.last_searched
-        # Remove DIDs from the database that no one has searched for the last 90 days
-        if time_since_last_searched.days > 90:
-            LOG.info(f"The DID '{row.did}' has not been searched for the last 90 days. Removing from the database to "
-                     f"save some space")
-            row.delete()
-        else:
-            row.documents = did_sidechain_rpc.get_documents_specific_did(row.did)
-            row.save()
+    cron_reset_didpublish_daily_limit()
 
 
 def cron_reset_didpublish_daily_limit():
@@ -195,6 +183,21 @@ def cron_reset_didpublish_daily_limit():
                 "count": 0,
                 "total_count": result[row.did]
             }
+            row.save()
+
+
+def cron_update_recent_did_documents():
+    LOG.info('Running cron job: update_recent_did_documents')
+    rows = DidDocument.objects()
+    for row in rows:
+        time_since_last_searched = datetime.utcnow() - row.last_searched
+        # Remove DIDs from the database that no one has searched for the last 90 days
+        if(time_since_last_searched.total_seconds() / (60.0 * 60.0 * 24.0)) > 90:
+            LOG.info(f"The DID '{row.did}' has not been searched for the last 90 days. Removing from the database to "
+                     f"save some space")
+            row.delete()
+        else:
+            row.documents = did_sidechain_rpc.get_documents_specific_did(row.did)
             row.save()
 
 
@@ -227,7 +230,7 @@ def cron_send_tx_to_did_sidechain():
         # Create raw transactions
         rows_pending = Didtx.objects(status=config.SERVICE_STATUS_PENDING)
         for row in rows_pending:
-            time_since_created = datetime.datetime.utcnow() - row.created
+            time_since_created = datetime.utcnow() - row.created
             if (time_since_created.total_seconds() / 60.0) > 60:
                 LOG.info(
                     f"The id '{row.id}' with DID '{row.did}' has been in Pending state for the last hour. Changing "

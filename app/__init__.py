@@ -78,8 +78,7 @@ application = App(middleware=[
 # Start cron scheduler
 if not config.PRODUCTION:
     scheduler = BackgroundScheduler()
-    scheduler.add_job(cron_send_daily_stats, 'interval', hours=24)
-    scheduler.add_job(cron_update_recent_did_documents, 'interval', seconds=config.CRON_INTERVAL)
-    scheduler.add_job(cron_reset_didpublish_daily_limit, 'interval', hours=24)
     scheduler.add_job(cron_send_tx_to_did_sidechain, 'interval', seconds=config.CRON_INTERVAL)
+    scheduler.add_job(cron_update_recent_did_documents, 'interval', seconds=config.CRON_INTERVAL)
+    scheduler.add_job(cron_send_daily_stats, 'interval', hours=24)
     scheduler.start()
