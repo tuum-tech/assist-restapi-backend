@@ -75,8 +75,6 @@ application = App(middleware=[
     AuthMiddleware(),
 ])
 
-cron_send_daily_stats()
-
 # Start cron scheduler
 if not config.PRODUCTION:
     scheduler = BackgroundScheduler()
