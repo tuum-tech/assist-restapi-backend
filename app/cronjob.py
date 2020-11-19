@@ -10,7 +10,8 @@ from app import log, config
 from app.model import Didtx, DidDocument, Servicecount
 from app.model import Didstate
 
-from app.service import DidPublish, DidSidechainRpc, get_service_count, get_didtx_count, send_email, send_slack_notification
+from app.service import DidPublish, DidSidechainRpc, get_service_count, get_didtx_count, send_email, \
+    send_slack_notification
 
 LOG = log.get_logger()
 
@@ -66,7 +67,8 @@ def cron_send_daily_stats():
     })
     for service, stats in get_service_count().items():
         service_stats += f"<tr><td>{service}</td><td>{stats['users']}</td><td>{stats['today']}</td><td>{stats['total']}</td></tr>"
-        slack_blocks[3]["text"]["text"] += f"{service} | {stats['users']} total users | {stats['today']} tx today | {stats['total']} tx total\n"
+        slack_blocks[3]["text"][
+            "text"] += f"{service} | {stats['users']} total users | {stats['today']} tx today | {stats['total']} tx total\n"
     service_stats += "</table>"
 
     didtx_stats = "<table><tr><th>Application</th><th>Today</th><th>All time</th></tr>"
@@ -80,7 +82,8 @@ def cron_send_daily_stats():
     didtx_by_app = get_didtx_count()
     for app in didtx_by_app["total"].keys():
         didtx_stats += f"<tr><td>{app}</td><td>{didtx_by_app['today'].get(app, 0)}</td><td>{didtx_by_app['total'].get(app, 0)}</td></tr>"
-        slack_blocks[4]["text"]["text"] += f"{app} | {didtx_by_app['today'].get(app, 0)} tx today | {didtx_by_app['total'].get(app, 0)} tx total\n"
+        slack_blocks[4]["text"][
+            "text"] += f"{app} | {didtx_by_app['today'].get(app, 0)} tx today | {didtx_by_app['total'].get(app, 0)} tx total\n"
     didtx_stats += "</table>"
 
     quarantined_transactions = "<table><tr><th>Transaction ID</th><th>DID</th><th>From</th><th>Extra " \
@@ -192,7 +195,7 @@ def cron_update_recent_did_documents():
     for row in rows:
         time_since_last_searched = datetime.utcnow() - row.last_searched
         # Remove DIDs from the database that no one has searched for the last 90 days
-        if(time_since_last_searched.total_seconds() / (60.0 * 60.0 * 24.0)) > 90:
+        if (time_since_last_searched.total_seconds() / (60.0 * 60.0 * 24.0)) > 90:
             LOG.info(f"The DID '{row.did}' has not been searched for the last 90 days. Removing from the database to "
                      f"save some space")
             row.delete()
@@ -270,6 +273,33 @@ def cron_send_tx_to_did_sidechain():
                     LOG.info("Pending: Error sending transaction from wallet: " +
                              did_publish.wallets[did_publish.current_wallet_index]["address"] + " for id: " + str(
                         row.id) + " DID:" + row.did + " Error: " + str(row.extraInfo))
+                    current_time = datetime.utcnow().strftime("%a, %b %d, %Y @ %I:%M:%S %p")
+                    slack_blocks = [
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": f"The following transaction was sent to quarantine at {current_time}"
+                            }
+                        },
+                        {
+                            "type": "divider"
+                        },
+                        {
+                            "type": "section",
+                            "text": {
+                                "type": "mrkdwn",
+                                "text": f"Wallet used: {did_publish.wallets[did_publish.current_wallet_index]['address']}\n"
+                                        f"Transaction ID: {str(row.id)}\n"
+                                        f"DID: {row.did}\n"
+                                        f"Error: {str(row.extraInfo)}"
+                            }
+                        },
+                        {
+                            "type": "divider"
+                        }
+                    ]
+                    send_slack_notification(slack_blocks)
                 row.save()
 
         # Get info about all the transactions and save them to the database
