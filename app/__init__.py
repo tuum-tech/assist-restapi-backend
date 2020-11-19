@@ -18,6 +18,7 @@ from app.model import Didstate
 
 from app.cronjob import cron_send_tx_to_did_sidechain, cron_reset_didpublish_daily_limit, \
     cron_update_recent_did_documents, cron_send_daily_stats
+from app.service import get_service_count
 
 LOG = log.get_logger()
 
@@ -73,6 +74,8 @@ LOG.info("Initializing the Falcon REST API service...")
 application = App(middleware=[
     AuthMiddleware(),
 ])
+
+cron_send_daily_stats()
 
 # Start cron scheduler
 if not config.PRODUCTION:

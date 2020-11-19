@@ -6,11 +6,10 @@ from app.model import Servicecount
 def get_service_count():
     rows = Servicecount.objects()
 
-    # Add a new service to this array in the future
-    services = ["did_publish"]
-
-    result = {}
-    for service in services:
+    result = {
+        "did_publish": {}
+    }
+    for service in result.keys():
         result[service] = {
             "users": 0,
             "today": 0,
@@ -20,7 +19,7 @@ def get_service_count():
     if rows:
         for item in rows:
             row = item.as_dict()
-            for service in services:
+            for service in result.keys():
                 if service in row["data"].keys():
                     result[service]["users"] += 1
                     result[service]["today"] += row["data"][service]["count"]

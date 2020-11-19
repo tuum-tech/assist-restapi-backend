@@ -10,7 +10,7 @@ from app import log, config
 from app.model import Didtx, DidDocument, Servicecount
 from app.model import Didstate
 
-from app.service import DidPublish, DidSidechainRpc, get_service_count, send_email
+from app.service import DidPublish, DidSidechainRpc, get_service_count, get_didtx_count, send_email
 
 LOG = log.get_logger()
 
@@ -19,6 +19,7 @@ did_sidechain_rpc = DidSidechainRpc()
 
 
 def cron_send_daily_stats():
+    LOG.info('Running cron job: cron_send_daily_stats')
     to_email = config.EMAIL["SENDER"]
     subject = "Assist Backend Daily Stats"
 
@@ -37,6 +38,12 @@ def cron_send_daily_stats():
     for service, stats in get_service_count().items():
         service_stats += f"<tr><td>{service}</td><td>{stats['users']}</td><td>{stats['today']}</td><td>{stats['total']}</td></tr>"
     service_stats += "</table>"
+
+    didtx_stats = "<table><tr><th>Application</th><th>Today</th><th>All time</th></tr>"
+    didtx_by_app = get_didtx_count()
+    for app in didtx_by_app["total"].keys():
+        didtx_stats += f"<tr><td>{app}</td><td>{didtx_by_app['today'].get(app, 0)}</td><td>{didtx_by_app['total'].get(app, 0)}</td></tr>"
+    didtx_stats += "</table>"
 
     quarantined_transactions = "<table><tr><th>Transaction ID</th><th>DID</th><th>From</th><th>Extra " \
                                "Info</th><th>Created</th></tr>"
@@ -88,6 +95,8 @@ def cron_send_daily_stats():
             {wallets}
             <h2>Service Stats</h2>
             {service_stats}
+            <h2>DID Transactions</h2>
+            {didtx_stats}
             <h2>Quarantined Transactions</h2>
             {quarantined_transactions}
             <h2>Stale Processing Transactions(Over 1 hour)</h2>
@@ -162,9 +171,10 @@ def cron_send_tx_to_did_sidechain():
         rows_pending = Didtx.objects(status=config.SERVICE_STATUS_PENDING)
         for row in rows_pending:
             time_since_created = datetime.datetime.utcnow() - row.created
-            if (time_since_created.seconds / 60.0) > 60:
+            if (time_since_created.total_seconds() / 60.0) > 60:
                 LOG.info(
-                    f"The id '{row.id}' with DID '{row.did}' has been in Pending state for the last hour. Changing its state to Cancelled")
+                    f"The id '{row.id}' with DID '{row.did}' has been in Pending state for the last hour. Changing "
+                    f"its state to Cancelled")
                 row.status = config.SERVICE_STATUS_CANCELLED
                 row.extraInfo = {
                     "reason": "Was in pending state for more than 1 hour"
@@ -229,7 +239,6 @@ def cron_send_tx_to_did_sidechain():
 
         
 def binary_split_resend(rows_quarantined):
-    LOG.info("Binary split")
     for row in rows_quarantined:
         LOG.info("Binary split start: rows: " + str(row.modified))
 
@@ -245,7 +254,7 @@ def binary_split_resend(rows_quarantined):
         tx_decoded = binascii.hexlify(tx).decode(encoding="utf-8")
         q_transactions.append(tx_decoded)
 
-    # second submit 1/2 tranasactions then the other half
+    # second submit 1/2 transactions then the other half
     # Send transaction to DID sidechain
     start = 0
     stop = 0

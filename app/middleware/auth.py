@@ -11,9 +11,9 @@ class AuthMiddleware(object):
         if prefetch_token:
             res.complete = True
             return True
-        
+
         if req.path == "/":
-            return True 
+            return True
 
         token = req.get_header('Authorization')
 
@@ -34,8 +34,8 @@ class AuthMiddleware(object):
         resp.set_header('Access-Control-Allow-Origin', '*')
 
         if (req_succeeded
-            and req.method == 'OPTIONS'
-            and req.get_header('Access-Control-Request-Method')
+                and req.method == 'OPTIONS'
+                and req.get_header('Access-Control-Request-Method')
         ):
             # NOTE(kgriffs): This is a CORS preflight request. Patch the
             #   response accordingly.

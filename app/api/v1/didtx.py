@@ -1,8 +1,5 @@
 # -*- coding: utf-8 -*-
 
-import base64
-import json
-
 from app import log, config
 from app.api.common import BaseResource
 from app.model import Didtx
@@ -50,12 +47,12 @@ class ItemFromConfirmationId(BaseResource):
                 })
         except:
             self.on_error(res, {
-                    "status": "404",
-                    "code": "404",
-                    "message": "Not Found"
-                })
-        
-        
+                "status": "404",
+                "code": "404",
+                "message": "Not Found"
+            })
+
+
 class ItemFromDid(BaseResource):
     """
     Handle for endpoint: /v1/didtx/did/{did}
@@ -103,7 +100,8 @@ class Create(BaseResource):
         did_publish = DidPublish()
         tx = did_publish.create_raw_transaction(did, did_request)
         if not tx:
-            raise InvalidParameterError(description="Could not generate a valid transaction out of the given didRequest")
+            raise InvalidParameterError(
+                description="Could not generate a valid transaction out of the given didRequest")
 
         # TODO: Verify whether the did_request is valid/authenticated
 
@@ -117,7 +115,7 @@ class Create(BaseResource):
             result["duplicate"] = True
             result["service_count"] = count
             result["confirmation_id"] = str(transaction_sent.id)
-        else: 
+        else:
             # If less than limit, increment and allow, otherwise, not allowed as max limit is reached
             if count < config.SERVICE_DIDPUBLISH_DAILY_LIMIT:
                 row = Didtx(
@@ -127,7 +125,7 @@ class Create(BaseResource):
                     memo=memo,
                     status="Pending"
                 )
-                row.save()            
+                row.save()
                 self.add_service_count_record(did, config.SERVICE_DIDPUBLISH)
                 result["confirmation_id"] = str(row.id)
             else:
