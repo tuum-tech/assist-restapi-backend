@@ -70,3 +70,5 @@ EMAIL = {
     "SMTP_PASSWORD": config('EMAIL_SMTP_PASSWORD', default="password", cast=str),
     "SMTP_TLS": config('EMAIL_SMTP_TLS', default=False, cast=bool),
 }
+
+SLACK_TOKEN = config('SLACK_TOKEN', default="slack-token", cast=str)

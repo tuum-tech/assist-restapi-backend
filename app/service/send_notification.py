@@ -4,6 +4,8 @@ import smtplib
 
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from slack_sdk import WebClient
+from slack_sdk.errors import SlackApiError
 
 from app import log, config
 
@@ -29,3 +31,15 @@ def send_email(to_email, subject, content_html):
         LOG.info("SMTP server logged in with user {0}".format(config.EMAIL["SMTP_USERNAME"]))
         server.sendmail(config.EMAIL["SENDER"], to_email, message.as_bytes())
         LOG.info("SMTP server sent email message")
+
+
+def send_slack_notification(blocks):
+    client = WebClient(token=config.SLACK_TOKEN)
+    try:
+        client.chat_postMessage(
+            username="Assist Bot",
+            channel="#assist-dapp",
+            blocks=blocks
+        )
+    except SlackApiError as e:
+        LOG.info(f"Could not send slack notification: Error: {e}")

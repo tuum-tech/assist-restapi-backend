@@ -10,7 +10,7 @@ from app import log, config
 from app.model import Didtx, DidDocument, Servicecount
 from app.model import Didstate
 
-from app.service import DidPublish, DidSidechainRpc, get_service_count, get_didtx_count, send_email
+from app.service import DidPublish, DidSidechainRpc, get_service_count, get_didtx_count, send_email, send_slack_notification
 
 LOG = log.get_logger()
 
@@ -23,30 +23,74 @@ def cron_send_daily_stats():
     to_email = config.EMAIL["SENDER"]
     subject = "Assist Backend Daily Stats"
 
-    wallets = "<table><tr><th>Address</th><th>Balance</th><th>Type</th></tr>"
+    slack_blocks = [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "These are the daily stats for Assist"
+            }
+        },
+        {
+            "type": "divider"
+        }
+    ]
+
+    wallets_stats = "<table><tr><th>Address</th><th>Balance</th><th>Type</th></tr>"
     # Used for testing purposes
     test_address = "EKsSQae7goc5oGGxwvgbUxkMsiQhC9ZfJ3"
     test_balance = did_sidechain_rpc.get_balance(test_address)
-    wallets += f"<tr><td>{test_address}</td><td>{test_balance}</td><td>Testing</td></tr>"
+    wallets_stats += f"<tr><td>{test_address}</td><td>{test_balance}</td><td>Testing</td></tr>"
+    slack_blocks.append({
+        "type": "section",
+        "text": {
+            "type": "mrkdwn",
+            "text": f"*Wallets and Current Balances*\n {test_address} | {test_balance} | Testing\n"
+        }
+    })
     for wallet in config.WALLETS:
         address = wallet["address"]
         balance = did_sidechain_rpc.get_balance(address)
-        wallets += f"<tr><td>{address}</td><td>{balance}</td><td>Production</td></tr>"
-    wallets += "</table>"
+        wallets_stats += f"<tr><td>{address}</td><td>{balance}</td><td>Production</td></tr>"
+        slack_blocks[2]["text"]["text"] += f"{address} | {balance} | Production\n"
+    wallets_stats += "</table>"
 
     service_stats = "<table><tr><th>Service</th><th>Users</th><th>Today</th><th>All time</th></tr>"
+    slack_blocks.append({
+        "type": "section",
+        "text": {
+            "type": "mrkdwn",
+            "text": f"*Service Stats*\n"
+        }
+    })
     for service, stats in get_service_count().items():
         service_stats += f"<tr><td>{service}</td><td>{stats['users']}</td><td>{stats['today']}</td><td>{stats['total']}</td></tr>"
+        slack_blocks[3]["text"]["text"] += f"{service} | {stats['users']} total users | {stats['today']} tx today | {stats['total']} tx total\n"
     service_stats += "</table>"
 
     didtx_stats = "<table><tr><th>Application</th><th>Today</th><th>All time</th></tr>"
+    slack_blocks.append({
+        "type": "section",
+        "text": {
+            "type": "mrkdwn",
+            "text": f"*DID Transactions*\n"
+        }
+    })
     didtx_by_app = get_didtx_count()
     for app in didtx_by_app["total"].keys():
         didtx_stats += f"<tr><td>{app}</td><td>{didtx_by_app['today'].get(app, 0)}</td><td>{didtx_by_app['total'].get(app, 0)}</td></tr>"
+        slack_blocks[4]["text"]["text"] += f"{app} | {didtx_by_app['today'].get(app, 0)} tx today | {didtx_by_app['total'].get(app, 0)} tx total\n"
     didtx_stats += "</table>"
 
     quarantined_transactions = "<table><tr><th>Transaction ID</th><th>DID</th><th>From</th><th>Extra " \
                                "Info</th><th>Created</th></tr>"
+    slack_blocks.append({
+        "type": "section",
+        "text": {
+            "type": "mrkdwn",
+            "text": f"*Quarantined Transactions*\n"
+        }
+    })
     for transaction in Didtx.objects(status=config.SERVICE_STATUS_QUARANTINE):
         id = transaction.id
         did = transaction.did
@@ -54,10 +98,18 @@ def cron_send_daily_stats():
         created = transaction.created
         extra_info = json.dumps(transaction.extraInfo)
         quarantined_transactions += f"<tr><td>{id}</td><td>{did}</td><td>{request_from}</td><td>{extra_info}</td><td>{created}</td></tr>"
+        slack_blocks[5]["text"]["text"] += f"{id} | {did} | {request_from} | {extra_info} | {created}\n"
     quarantined_transactions += "</table>"
 
     stale_processing_transactions = "<table><tr><th>Transaction ID</th><th>DID</th><th>From</th><th>Extra " \
-                               "Info</th><th>Created</th></tr>"
+                                    "Info</th><th>Created</th></tr>"
+    slack_blocks.append({
+        "type": "section",
+        "text": {
+            "type": "mrkdwn",
+            "text": f"*Stale Processing Transactions(Over 1 hour)*\n"
+        }
+    })
     for transaction in Didtx.objects(status=config.SERVICE_STATUS_PROCESSING):
         time_since_created = datetime.datetime.utcnow() - transaction.created
         if (time_since_created.seconds / 60.0) > 60:
@@ -67,7 +119,11 @@ def cron_send_daily_stats():
             created = transaction.created
             extra_info = json.dumps(transaction.extraInfo)
             stale_processing_transactions += f"<tr><td>{id}</td><td>{did}</td><td>{request_from}</td><td>{extra_info}</td><td>{created}</td></tr>"
+            slack_blocks[6]["text"]["text"] += f"{id} | {did} | {request_from} | {extra_info} | {created}\n"
     stale_processing_transactions += "</table>"
+    slack_blocks.append({
+        "type": "divider"
+    })
 
     content_html = f"""
         <html>
@@ -92,7 +148,7 @@ def cron_send_daily_stats():
         </head>
         <body>
             <h2>Wallets and Current Balances</h2>
-            {wallets}
+            {wallets_stats}
             <h2>Service Stats</h2>
             {service_stats}
             <h2>DID Transactions</h2>
@@ -105,6 +161,7 @@ def cron_send_daily_stats():
         </html>
     """
     send_email(to_email, subject, content_html)
+    send_slack_notification(slack_blocks)
 
 
 def cron_update_recent_did_documents():
@@ -237,7 +294,7 @@ def cron_send_tx_to_did_sidechain():
         message += ' File "' + exc_tb.tb_frame.f_code.co_filename + '", line ' + str(exc_tb.tb_lineno) + "\n"
         LOG.info(f"Error while running cron job: {message}")
 
-        
+
 def binary_split_resend(rows_quarantined):
     for row in rows_quarantined:
         LOG.info("Binary split start: rows: " + str(row.modified))
