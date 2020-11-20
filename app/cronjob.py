@@ -20,7 +20,7 @@ did_sidechain_rpc = DidSidechainRpc()
 
 
 def cron_send_daily_stats():
-    LOG.info('Running cron job: cron_send_daily_stats')
+    LOG.info('Started cron job: cron_send_daily_stats')
     to_email = config.EMAIL["SENDER"]
     subject = "Assist Backend Daily Stats"
 
@@ -168,29 +168,32 @@ def cron_send_daily_stats():
     send_email(to_email, subject, content_html)
     send_slack_notification(slack_blocks)
     cron_reset_didpublish_daily_limit()
+    LOG.info('Completed cron job: cron_send_daily_stats')
 
 
 def cron_reset_didpublish_daily_limit():
-    LOG.info('Running cron job: reset_didpublish_daily_limit')
+    LOG.info('Started cron job: reset_didpublish_daily_limit')
     rows = Servicecount.objects()
     for row in rows:
         if config.SERVICE_DIDPUBLISH in row.data.keys():
             did_txs = Didtx.objects(did=row.did)
-            result = {}
-            for tx in did_txs:
-                if tx.did in result.keys():
-                    result[tx.did] += 1
-                else:
-                    result[tx.did] = 1
-            row.data["did_publish"] = {
-                "count": 0,
-                "total_count": result[row.did]
-            }
-            row.save()
+            if did_txs:
+                result = {}
+                for tx in did_txs:
+                    if tx.did in result.keys():
+                        result[tx.did] += 1
+                    else:
+                        result[tx.did] = 1
+                row.data["did_publish"] = {
+                    "count": 0,
+                    "total_count": result[row.did]
+                }
+                row.save()
+    LOG.info('Completed cron job: reset_didpublish_daily_limit')
 
 
 def cron_update_recent_did_documents():
-    LOG.info('Running cron job: update_recent_did_documents')
+    LOG.info('Started cron job: update_recent_did_documents')
     rows = DidDocument.objects()
     for row in rows:
         time_since_last_searched = datetime.utcnow() - row.last_searched
@@ -202,10 +205,11 @@ def cron_update_recent_did_documents():
         else:
             row.documents = did_sidechain_rpc.get_documents_specific_did(row.did)
             row.save()
+    LOG.info('Completed cron job: update_recent_did_documents')
 
 
 def cron_send_tx_to_did_sidechain():
-    LOG.info('Running cron job: send_tx_to_did_sidechain')
+    LOG.info('Started cron job: send_tx_to_did_sidechain')
     # Verify the DID sidechain is reachable
     response = did_sidechain_rpc.get_block_count()
     if not (response and response["result"]):
@@ -229,6 +233,29 @@ def cron_send_tx_to_did_sidechain():
         row.save()
 
     pending_transactions = []
+    current_time = datetime.utcnow().strftime("%a, %b %d, %Y @ %I:%M:%S %p")
+    slack_blocks = [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": ""
+            }
+        },
+        {
+            "type": "divider"
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": ""
+            }
+        },
+        {
+            "type": "divider"
+        }
+    ]
     try:
         # Create raw transactions
         rows_pending = Didtx.objects(status=config.SERVICE_STATUS_PENDING)
@@ -273,32 +300,11 @@ def cron_send_tx_to_did_sidechain():
                     LOG.info("Pending: Error sending transaction from wallet: " +
                              did_publish.wallets[did_publish.current_wallet_index]["address"] + " for id: " + str(
                         row.id) + " DID:" + row.did + " Error: " + str(row.extraInfo))
-                    current_time = datetime.utcnow().strftime("%a, %b %d, %Y @ %I:%M:%S %p")
-                    slack_blocks = [
-                        {
-                            "type": "section",
-                            "text": {
-                                "type": "mrkdwn",
-                                "text": f"The following transaction was sent to quarantine at {current_time}"
-                            }
-                        },
-                        {
-                            "type": "divider"
-                        },
-                        {
-                            "type": "section",
-                            "text": {
-                                "type": "mrkdwn",
-                                "text": f"Wallet used: {did_publish.wallets[did_publish.current_wallet_index]['address']}\n"
-                                        f"Transaction ID: {str(row.id)}\n"
-                                        f"DID: {row.did}\n"
-                                        f"Error: {str(row.extraInfo)}"
-                            }
-                        },
-                        {
-                            "type": "divider"
-                        }
-                    ]
+                    slack_blocks[0]["text"]["text"] = f"The following transaction was sent to quarantine at {current_time}"
+                    slack_blocks[2]["text"]["text"] = f"Wallet used: {did_publish.wallets[did_publish.current_wallet_index]['address']}\n" \
+                                                      f"Transaction ID: {str(row.id)}\n"  \
+                                                      f"DID: {row.did}\n"  \
+                                                      f"Error: {str(row.extraInfo)}"
                     send_slack_notification(slack_blocks)
                 row.save()
 
@@ -325,7 +331,12 @@ def cron_send_tx_to_did_sidechain():
         exc_type, exc_obj, exc_tb = sys.exc_info()
         message += "Unexpected error: " + str(exc_type) + "\n"
         message += ' File "' + exc_tb.tb_frame.f_code.co_filename + '", line ' + str(exc_tb.tb_lineno) + "\n"
+        slack_blocks[0]["text"]["text"] = f"Error while sending tx to the blockchain at {current_time}"
+        slack_blocks[2]["text"]["text"] = f"Wallet used: {did_publish.wallets[did_publish.current_wallet_index]['address']}\n" \
+                                          f"Error: {message}"
+        send_slack_notification(slack_blocks)
         LOG.info(f"Error while running cron job: {message}")
+    LOG.info('Completed cron job: send_tx_to_did_sidechain')
 
 
 def binary_split_resend(rows_quarantined):
