@@ -18,7 +18,9 @@ function start () {
         pip install -r requirements.txt
         ;;
     Darwin )
-        pip install --global-option=build_ext --global-option="-I/usr/local/include" --global-option="-L/usr/local/lib" -r requirements.txt
+        pip install --global-option=build_ext \
+                    --global-option="-I/usr/local/include" --global-option="-L/usr/local/lib" \
+                    --global-option="-I/usr/local/opt/zlib/include" --global-option="-L/usr/local/opt/zlib/lib" -r requirements.txt
         ;;
     *)
     exit 1
