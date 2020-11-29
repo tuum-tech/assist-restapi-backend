@@ -11,3 +11,4 @@ mongoengine==0.20.0
 PyJWT==1.7.1
 APScheduler==3.6.3
 python-decouple==3.3
+slack-sdk==3.0.0

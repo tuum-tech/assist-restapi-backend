@@ -9,7 +9,7 @@ function start () {
         -p 27017:27017                                      \
         mongo
 
-    virtualenv -p `which python3` .venv
+    virtualenv -p `which python3.7` .venv
     source .venv/bin/activate
     pip install --upgrade pip
 
