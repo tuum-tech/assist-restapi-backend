@@ -5,6 +5,8 @@ import sys
 import json
 from datetime import datetime
 
+from pymongo import MongoClient
+
 from app import log, config
 
 from app.model import Didtx, DidDocument, Servicecount
@@ -173,22 +175,21 @@ def cron_send_daily_stats():
 
 def cron_reset_didpublish_daily_limit():
     LOG.info('Started cron job: reset_didpublish_daily_limit')
-    rows = Servicecount.objects()
-    for row in rows:
+    mongo_client = MongoClient(config.MONGO_CONNECT_HOST)
+    db = mongo_client.assistdb
+
+    result = db.servicecount.aggregate([
+        {"$match": {"data.did_publish.count": {"$gt": 0}}},
+        {"$group": {"_id": "$did"}},
+        {"$project": {"_id": 0, "did": "$_id"}}
+    ])
+
+    for r in result:
+        rows = Servicecount.objects(did=r["did"])
+        row = rows[0]
         if config.SERVICE_DIDPUBLISH in row.data.keys():
-            did_txs = Didtx.objects(did=row.did)
-            if did_txs:
-                result = {}
-                for tx in did_txs:
-                    if tx.did in result.keys():
-                        result[tx.did] += 1
-                    else:
-                        result[tx.did] = 1
-                row.data["did_publish"] = {
-                    "count": 0,
-                    "total_count": result[row.did]
-                }
-                row.save()
+            row.data["did_publish"]["count"] = 0
+            row.save()
     LOG.info('Completed cron job: reset_didpublish_daily_limit')
 
 

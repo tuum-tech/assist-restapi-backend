@@ -1,27 +1,34 @@
 # -*- coding: utf-8 -*-
-from datetime import datetime
+from datetime import datetime, timedelta
+from pymongo import MongoClient
 
-from app.model import Didtx
+from app import config
 
 
 def get_didtx_count():
-    rows = Didtx.objects()
+    mongo_client = MongoClient(config.MONGO_CONNECT_HOST)
+    db = mongo_client.assistdb
 
     result = {
         "today": {},
         "total": {}
     }
-    if rows:
-        for row in rows:
-            if row.requestFrom in result["total"].keys():
-                result["total"][row.requestFrom] += 1
-            else:
-                result["total"][row.requestFrom] = 1
-            time_since_created = datetime.utcnow() - row.created
 
-            if (time_since_created.total_seconds() / (60.0 * 60.0)) < 24:
-                if row.requestFrom in result["today"].keys():
-                    result["today"][row.requestFrom] += 1
-                else:
-                    result["today"][row.requestFrom] = 1
+    date_today = datetime.utcnow() - timedelta(hours=24)
+    result_today = db.didtx.aggregate([
+        {"$match": {"created": {"$gt": date_today}}},
+        {"$group": {"_id": "$requestFrom", "count": {"$sum": 1}}},
+        {"$project": {"_id": 0, "name": "$_id", "count": "$count"}}
+    ])
+    for r in result_today:
+        result["today"][r["name"]] = r["count"]
+
+    result_total = db.didtx.aggregate([
+        {"$group": {"_id": "$requestFrom", "count": {"$sum": 1}}},
+        {"$project": {"_id": 0, "name": "$_id", "count": "$count"}}
+    ])
+
+    for r in result_total:
+        result["total"][r["name"]] = r["count"]
+
     return result

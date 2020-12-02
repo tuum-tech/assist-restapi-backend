@@ -12,13 +12,9 @@ from app.errors import AppError
 from mongoengine import connect
 
 from app.middleware import AuthMiddleware
-from app.model import Didtx
-from app.model import DidDocument
-from app.model import Didstate
+from app.model import Didtx, DidDocument, Didstate
 
-from app.cronjob import cron_send_tx_to_did_sidechain, cron_reset_didpublish_daily_limit, \
-    cron_update_recent_did_documents, cron_send_daily_stats
-from app.service import get_service_count
+from app.cronjob import cron_send_tx_to_did_sidechain, cron_update_recent_did_documents, cron_send_daily_stats
 
 LOG = log.get_logger()
 
@@ -57,18 +53,10 @@ class App(falcon.API):
 
 # Connect to mongodb
 LOG.info("Connecting to mongodb...")
-if config.PRODUCTION:
-    connect(
-        config.MONGO['DATABASE'],
-        host="mongodb+srv://" + config.MONGO['USERNAME'] + ":" + config.MONGO['PASSWORD'] + "@" +
-             config.MONGO['HOST'] + "/?retryWrites=true&w=majority"
-    )
-else:
-    connect(
-        config.MONGO['DATABASE'],
-        host="mongodb://" + config.MONGO['USERNAME'] + ":" + config.MONGO['PASSWORD'] + "@" +
-             config.MONGO['HOST'] + ":" + str(config.MONGO['PORT']) + "/?authSource=admin"
-    )
+connect(
+    config.MONGO['DATABASE'],
+    host=config.MONGO_CONNECT_HOST
+)
 
 LOG.info("Initializing the Falcon REST API service...")
 application = App(middleware=[

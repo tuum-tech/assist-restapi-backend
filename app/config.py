@@ -21,6 +21,12 @@ MONGO = {
     "USERNAME": config('MONGO_USERNAME'),
     "PASSWORD": config('MONGO_PASSWORD')
 }
+if PRODUCTION:
+    MONGO_CONNECT_HOST = "mongodb+srv://" + MONGO['USERNAME'] + ":" + MONGO['PASSWORD'] + "@" + \
+                         MONGO['HOST'] + "/?retryWrites=true&w=majority"
+else:
+    MONGO_CONNECT_HOST = "mongodb://" + MONGO['USERNAME'] + ":" + MONGO['PASSWORD'] + "@" + \
+                         MONGO['HOST'] + ":" + str(MONGO['PORT']) + "/?authSource=admin"
 
 SERVICE_STATUS_PENDING = "Pending"
 SERVICE_STATUS_PROCESSING = "Processing"
