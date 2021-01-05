@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 
 function start () {
-    docker container stop assist-mongo || true && docker container rm -f assist-mongo || true
-    docker run -d --name assist-mongo                     \
-        -v ${PWD}/.mongodb-data:/data/db                         \
-        -e MONGO_INITDB_ROOT_USERNAME=mongoadmin          \
-        -e MONGO_INITDB_ROOT_PASSWORD=assistmongo         \
-        -p 27017:27017                                      \
+    docker container stop tuum-mongo || true && docker container rm -f tuum-mongo || true
+    docker run -d --name tuum-mongo                     \
+        -v ${HOME}/.tuum-mongodb-data:/data/db                \
+        -e MONGO_INITDB_ROOT_USERNAME=mongoadmin        \
+        -e MONGO_INITDB_ROOT_PASSWORD=mongopass         \
+        -p 27017:27017                                  \
         mongo
 
     virtualenv -p `which python3.7` .venv
@@ -27,11 +27,11 @@ function start () {
     ;;
     esac
 
-    gunicorn -b 0.0.0.0:8000 --reload app:application --threads 4 --timeout 300 --graceful-timeout 300
+    gunicorn -b 0.0.0.0:8000 --reload app:application
 }
 
 function stop () {
-    docker container stop assist-mongo || true && docker container rm -f assist-mongo || true
+    docker container stop tuum-mongo || true && docker container rm -f tuum-mongo || true
     ps -ef | grep gunicorn | awk '{print $2}' | xargs kill -9
 }
 
