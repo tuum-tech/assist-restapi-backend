@@ -51,8 +51,8 @@ class DidSidechainRpc(object):
             LOG.info(f"Error while retrieving balance for an address: {e}")
         return balance
 
-    def get_previous_did_document(self, did):
-        LOG.info("Retrieving previous DID document if available from the DID sidechain...")
+    def resolve_did(self, did):
+        LOG.info("Resolving DID to ensure the DID document is valid...")
         payload = {
             "method": "resolvedid",
             "params": {
@@ -66,7 +66,7 @@ class DidSidechainRpc(object):
             if response and response["result"]:
                 document = response["result"]
         except Exception as e:
-            LOG.info(f"Error while getting previous DID document: {e}")
+            LOG.info(f"Error while resolving DID: {e}")
         return document
 
     def get_raw_transaction(self, txid):
@@ -100,7 +100,7 @@ class DidSidechainRpc(object):
 
     def get_documents_specific_did(self, did):
         documents = {}
-        result = self.get_previous_did_document(did)
+        result = self.resolve_did(did)
         if result:
             transactions = result.get("transaction", None)
             if not transactions:

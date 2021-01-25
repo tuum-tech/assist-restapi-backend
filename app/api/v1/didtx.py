@@ -6,9 +6,9 @@ from app.api.common import BaseResource
 from app.config import RATE_LIMIT_CALLS, RATE_LIMIT_PERIOD
 from app.model import Didtx
 from app.model import Servicecount
-from app.service import DidPublish
+from app.service import DidPublish, DidSidechainRpc
 from app.errors import (
-    InvalidParameterError, NotFoundError
+    InvalidParameterError, NotFoundError, UserNotExistsError
 )
 
 LOG = log.get_logger()
@@ -95,19 +95,32 @@ class Create(BaseResource):
         memo = data["memo"]
         did = data["did"].replace("did:elastos:", "").split("#")[0]
 
-        # TODO: Verify whether the did is valid
+        # Verify whether the did is valid
+        did_sidechain_rpc = DidSidechainRpc()
+        did_resolver_result = did_sidechain_rpc.resolve_did(did)
+        if not did_resolver_result:
+            err_message = f"Invalid DID: {did}"
+            LOG.info(f"Error /v1/didtx/create: {err_message}")
+            raise UserNotExistsError(description=err_message)
 
-        # TODO: Verify whether the did_request is valid
+        # TODO: Verify whether the data passed to us is legitimate
+        # TODO: Check whether the data is in fact signed by this DID
 
         did_to_consume = did_request["proof"]["verificationMethod"].replace("did:elastos:", "").split("#")[0]
+        did_resolver_result = did_sidechain_rpc.resolve_did(did_to_consume)
+        if not did_resolver_result:
+            err_message = f"Invalid DID: {did_to_consume}"
+            LOG.info(f"Error /v1/didtx/create: {err_message}")
+            raise UserNotExistsError(description=err_message)
 
         # First verify whether this is a valid payload
         did_publish = DidPublish()
         tx = did_publish.create_raw_transaction(did, did_request)
         if not tx:
-            LOG.info(f"Error /v1/didtx/create")
+            err_message = "Could not generate a valid transaction out of the given didRequest"
+            LOG.info(f"Error /v1/didtx/create: {err_message}")
             raise InvalidParameterError(
-                description="Could not generate a valid transaction out of the given didRequest")
+                description=err_message)
 
         # Check the number of times this did has used the "did_publish" service
         count = self.retrieve_service_count(did, config.SERVICE_DIDPUBLISH)
