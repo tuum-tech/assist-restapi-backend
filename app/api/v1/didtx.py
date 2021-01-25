@@ -1,12 +1,14 @@
 # -*- coding: utf-8 -*-
+from ratelimit import limits
 
 from app import log, config
 from app.api.common import BaseResource
+from app.config import RATE_LIMIT_CALLS, RATE_LIMIT_PERIOD
 from app.model import Didtx
 from app.model import Servicecount
 from app.service import DidPublish
 from app.errors import (
-    AppError, InvalidParameterError,
+    InvalidParameterError, NotFoundError
 )
 
 LOG = log.get_logger()
@@ -24,33 +26,28 @@ class Collection(BaseResource):
             obj = [each.as_dict() for each in rows]
             self.on_success(res, obj)
         else:
-            raise AppError()
+            LOG.info(f"Error /v1/didtx")
+            raise NotFoundError()
 
 
 class ItemFromConfirmationId(BaseResource):
     """
-    Handle for endpoint: /v1/didtx/id/{confirmation_id}
+    Handle for endpoint: /v1/didtx/confirmation_id/{confirmation_id}
     """
 
     def on_get(self, req, res, confirmation_id):
-        LOG.info(f'Enter /v1/didtx/id/{confirmation_id}')
+        LOG.info(f'Enter /v1/didtx/confirmation_id/{confirmation_id}')
         try:
             rows = Didtx.objects(id=confirmation_id)
             if rows:
                 row = [each.as_dict() for each in rows][0]
                 self.on_success(res, row)
             else:
-                self.on_error(res, {
-                    "status": "404",
-                    "code": "404",
-                    "message": "Not Found"
-                })
-        except:
-            self.on_error(res, {
-                "status": "404",
-                "code": "404",
-                "message": "Not Found"
-            })
+                LOG.info(f"Error /v1/didtx/id/{confirmation_id}")
+                raise NotFoundError()
+        except Exception as e:
+            LOG.info(f"Error /v1/didtx/id/{confirmation_id}: {str(e)}")
+            raise NotFoundError()
 
 
 class ItemFromDid(BaseResource):
@@ -65,7 +62,8 @@ class ItemFromDid(BaseResource):
             obj = [each.as_dict() for each in rows]
             self.on_success(res, obj)
         else:
-            raise AppError()
+            LOG.info(f"Error /v1/didtx/did/{did}")
+            raise NotFoundError()
 
 
 class RecentItemsFromDid(BaseResource):
@@ -80,7 +78,8 @@ class RecentItemsFromDid(BaseResource):
             obj = [each.as_dict() for each in rows]
             self.on_success(res, obj)
         else:
-            raise AppError()
+            LOG.info(f"Error /v1/didtx/recent/did/{did}")
+            raise NotFoundError()
 
 
 class Create(BaseResource):
@@ -88,25 +87,33 @@ class Create(BaseResource):
     Handle for endpoint: /v1/didtx/create
     """
 
+    @limits(calls=RATE_LIMIT_CALLS, period=RATE_LIMIT_PERIOD)
     def on_post(self, req, res):
         LOG.info(f'Enter /v1/didtx/create')
         data = req.media
         did_request = data["didRequest"]
         memo = data["memo"]
-
         did = data["did"].replace("did:elastos:", "").split("#")[0]
+
+        # TODO: Verify whether the did is valid
+
+        # TODO: Verify whether the did_request is valid
+
+        did_to_consume = did_request["proof"]["verificationMethod"].replace("did:elastos:", "").split("#")[0]
 
         # First verify whether this is a valid payload
         did_publish = DidPublish()
         tx = did_publish.create_raw_transaction(did, did_request)
         if not tx:
+            LOG.info(f"Error /v1/didtx/create")
             raise InvalidParameterError(
                 description="Could not generate a valid transaction out of the given didRequest")
 
-        # TODO: Verify whether the did_request is valid/authenticated
-
         # Check the number of times this did has used the "did_publish" service
         count = self.retrieve_service_count(did, config.SERVICE_DIDPUBLISH)
+        count_did_to_consume = self.retrieve_service_count(did_to_consume, config.SERVICE_DIDPUBLISH)
+        if count_did_to_consume > count:
+            count = count_did_to_consume
 
         result = {}
         # Check if the row already exists with the same didRequest
@@ -127,6 +134,7 @@ class Create(BaseResource):
                 )
                 row.save()
                 self.add_service_count_record(did, config.SERVICE_DIDPUBLISH)
+                self.add_service_count_record(did_to_consume, config.SERVICE_DIDPUBLISH)
                 result["confirmation_id"] = str(row.id)
             else:
                 result["confirmation_id"] = ""

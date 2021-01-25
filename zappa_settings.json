@@ -1,26 +1,26 @@
 {
-    "prod": {
-        "app_function": "app.application",
-        "profile_name": "eb-cli",
-        "project_name": "assist-restapi-",
-        "runtime": "python3.7",
-        "s3_bucket": "assist-restapi-zappa",
-        "aws_region": "us-east-1",
-        "events": [
-            {
-                "function": "app.cronjob.cron_send_tx_to_did_sidechain",
-                "expression": "rate(2 minutes)"
-            },
-            {
-                "function": "app.cronjob.cron_update_recent_did_documents",
-                "expression": "rate(2 minutes)"
-            },
-            {
-                "function": "app.cronjob.cron_send_daily_stats",
-                "expression": "cron(0 0 * * ? *)"
-            }
-        ],
-        "keep_warm": false,
-        "timeout_seconds": 600
-    }
+  "prod": {
+    "app_function": "app.application",
+    "profile_name": "eb-cli",
+    "project_name": "assist-restapi-",
+    "runtime": "python3.7",
+    "s3_bucket": "assist-restapi-zappa",
+    "aws_region": "us-east-1",
+    "events": [
+      {
+        "function": "app.cronjob.cron_send_tx_to_did_sidechain",
+        "expression": "rate(2 minutes)"
+      },
+      {
+        "function": "app.cronjob.cron_update_recent_did_documents",
+        "expression": "rate(2 minutes)"
+      },
+      {
+        "function": "app.cronjob.cron_send_daily_stats",
+        "expression": "cron(0 0 * * ? *)"
+      }
+    ],
+    "keep_warm": false,
+    "timeout_seconds": 600
+  }
 }

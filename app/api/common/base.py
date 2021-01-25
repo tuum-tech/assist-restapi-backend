@@ -10,7 +10,7 @@ except ImportError:
 
 from app import log
 from app.config import BRAND_NAME, MONGO
-from app.errors import NotSupportedError
+from app.errors import NotFoundError
 
 LOG = log.get_logger()
 
@@ -50,13 +50,13 @@ class BaseResource(object):
             res.status = falcon.HTTP_200
             res.body = self.to_json(self.HELLO_WORLD)
         else:
-            raise NotSupportedError(method="GET", url=req.path)
+            raise NotFoundError(method="GET", url=req.path)
 
     def on_post(self, req, res):
-        raise NotSupportedError(method="POST", url=req.path)
+        raise NotFoundError(method="POST", url=req.path)
 
     def on_put(self, req, res):
-        raise NotSupportedError(method="PUT", url=req.path)
+        raise NotFoundError(method="PUT", url=req.path)
 
     def on_delete(self, req, res):
-        raise NotSupportedError(method="DELETE", url=req.path)
+        raise NotFoundError(method="DELETE", url=req.path)

@@ -31,7 +31,7 @@ ERR_DATABASE_ROLLBACK = {
     "title": "Database Rollback Error",
 }
 
-ERR_NOT_SUPPORTED = {"status": falcon.HTTP_404, "code": 10, "title": "Not Supported"}
+ERR_NOT_FOUND = {"status": falcon.HTTP_404, "code": 10, "title": "No result found"}
 
 
 ERR_USER_NOT_EXISTS = {
@@ -88,9 +88,9 @@ class DatabaseError(AppError):
         self.error["description"] = obj
 
 
-class NotSupportedError(AppError):
+class NotFoundError(AppError):
     def __init__(self, method=None, url=None):
-        super().__init__(ERR_NOT_SUPPORTED)
+        super().__init__(ERR_NOT_FOUND)
         if method and url:
             self.error["description"] = "method: %s, url: %s" % (method, url)
 

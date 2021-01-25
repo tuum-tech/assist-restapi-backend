@@ -78,3 +78,7 @@ EMAIL = {
 }
 
 SLACK_TOKEN = config('SLACK_TOKEN', default="slack-token", cast=str)
+
+# Rate limit(1K calls per minute)
+RATE_LIMIT_CALLS = 10000
+RATE_LIMIT_PERIOD = 60
