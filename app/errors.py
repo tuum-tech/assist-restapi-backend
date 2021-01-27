@@ -25,10 +25,10 @@ ERR_INVALID_PARAMETER = {
     "title": "Invalid Parameter",
 }
 
-ERR_DATABASE_ROLLBACK = {
-    "status": falcon.HTTP_500,
+ERR_DAILY_LIMIT_REACHED = {
+    "status": falcon.HTTP_429,
     "code": 77,
-    "title": "Database Rollback Error",
+    "title": "Daily limit reached",
 }
 
 ERR_NOT_FOUND = {"status": falcon.HTTP_404, "code": 10, "title": "No result found"}
@@ -79,13 +79,10 @@ class InvalidParameterError(AppError):
         self.error["description"] = description
 
 
-class DatabaseError(AppError):
-    def __init__(self, error, args=None, params=None):
-        super().__init__(error)
-        obj = OrderedDict()
-        obj["details"] = ", ".join(args)
-        obj["params"] = str(params)
-        self.error["description"] = obj
+class DailyLimitReachedError(AppError):
+    def __init__(self, description=None):
+        super().__init__(ERR_DAILY_LIMIT_REACHED)
+        self.error["description"] = description
 
 
 class NotFoundError(AppError):

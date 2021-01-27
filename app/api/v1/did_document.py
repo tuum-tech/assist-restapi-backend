@@ -1,12 +1,16 @@
 # -*- coding: utf-8 -*-
 import requests
 
+from ratelimit import limits, RateLimitException
+from backoff import on_exception, expo
+
 from app import log
 import datetime
 from app.api.common import BaseResource
 from app.model import DidDocument
+from app.config import RATE_LIMIT_PERIOD, RATE_LIMIT_CALLS
 
-from app.service import DidSidechainRpc
+from app.service import DidSidechainRpc, api_rate_limit_reached
 
 LOG = log.get_logger()
 
@@ -16,6 +20,8 @@ class GetDidDocumentsFromDid(BaseResource):
     Handle for endpoint: /v1/documents/did/{did}
     """
 
+    @on_exception(expo, RateLimitException, on_backoff=api_rate_limit_reached, max_tries=2)
+    @limits(calls=RATE_LIMIT_CALLS, period=RATE_LIMIT_PERIOD)
     def on_get(self, req, res, did):
         LOG.info(f'Enter /v1/documents/did/{did}')
         did_sidechain_rpc = DidSidechainRpc()
@@ -31,6 +37,8 @@ class GetDidDocumentsFromCryptoname(BaseResource):
     Handle for endpoint: /v1/documents/crypto_name/{crypto_name}
     """
 
+    @on_exception(expo, RateLimitException, on_backoff=api_rate_limit_reached, max_tries=2)
+    @limits(calls=RATE_LIMIT_CALLS, period=RATE_LIMIT_PERIOD)
     def on_get(self, req, res, crypto_name):
         LOG.info(f'Enter /v1/documents/crypto_name/{crypto_name}')
         did_sidechain_rpc = DidSidechainRpc()

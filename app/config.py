@@ -79,6 +79,10 @@ EMAIL = {
 
 SLACK_TOKEN = config('SLACK_TOKEN', default="slack-token", cast=str)
 
-# Rate limit(1K calls per minute)
+# Rate limit for creating/updating DIDs(100 calls per minute)
+RATE_LIMIT_CREATE_DID = 100
+# Rate limit for all other APIs(10K calls per minute)
 RATE_LIMIT_CALLS = 10000
 RATE_LIMIT_PERIOD = 60
+
+

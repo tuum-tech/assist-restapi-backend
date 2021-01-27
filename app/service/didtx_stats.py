@@ -2,7 +2,10 @@
 from datetime import datetime, timedelta
 from pymongo import MongoClient
 
-from app import config
+from app import log, config
+from app.service import send_slack_notification
+
+LOG = log.get_logger()
 
 
 def get_didtx_count():
@@ -32,3 +35,45 @@ def get_didtx_count():
         result["total"][r["name"]] = r["count"]
 
     return result
+
+
+def api_rate_limit_reached(details):
+    message1 = "Global rate limit reached"
+    message2 = f"Max limit Allowed: {config.RATE_LIMIT_CREATE_DID} calls per {config.RATE_LIMIT_PERIOD / 60.0} minutes"
+    message3 = "Backing off {wait:0.1f} seconds after {tries} tries " \
+               "calling function {target} with args {args} and kwargs " \
+               "{kwargs}".format(**details)
+    LOG.info(f"Method: cron_rate_limit_reached: {message1}\n{message2}\n{message3}")
+    slack_blocks = [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": message1
+            }
+        },
+        {
+            "type": "divider"
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": message2
+            }
+        },
+        {
+            "type": "divider"
+        },
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": message3
+            }
+        },
+        {
+            "type": "divider"
+        }
+    ]
+    send_slack_notification(slack_blocks)

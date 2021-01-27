@@ -35,7 +35,7 @@ curl http://localhost:8000
 ```
 - To create a transaction, run the following:
 ```
-curl -XPOST -H "Authorization: assist-restapi-secret-key" -H "Content-Type: application/json" -H "Accept: application/json" -d @test/example_did_request.json http://localhost:8000/v1/didtx/create
+curl -XPOST -H "Content-Type: application/json" -H "Accept: application/json" -d @test/example_did_request.json http://localhost:8000/v1/didtx/create
 ```
 - To retrieve all the transactions:
 ``` 
@@ -65,7 +65,7 @@ curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/docu
 ```
 curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/service_count/did_publish/ii4ZCz8LYRhax3YB39SWJcMM2hjaHT35KD
 ```
-- To retreive service count for all the services for all the DIDs:
+- To retrieve service count for all the services for all the DIDs:
 ```
 curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/service_count/statistics
 ```
