@@ -6,6 +6,7 @@ from mongoengine import StringField, DictField, DateTimeField, Document
 class Didtx(Document):
     did = StringField(max_length=128)
     requestFrom = StringField(max_length=128)
+    didRequestDid = StringField(max_length=128)
     didRequest = DictField()
     status = StringField(max_length=32)
     memo = StringField()
@@ -23,6 +24,7 @@ class Didtx(Document):
             "id": str(self.id),
             "did": self.did,
             "requestFrom": self.requestFrom,
+            "didRequestDid": self.didRequestDid,
             "didRequest": self.didRequest,
             "status": self.status,
             "memo": self.memo,

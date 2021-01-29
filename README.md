@@ -47,15 +47,15 @@ curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didt
 ```
 - To retrieve all transactions for a particular DID:
 ```
-curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didtx/did/ii4ZCz8LYRhax3YB39SWJcMM2hjaHT35KD
+curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didtx/did/did:elastos:ii4ZCz8LYRHax3YB79SWJcMM2hjaHT35KN
 ```
 - To retrieve recent 5 requests for a particular DID:
 ```
-curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didtx/recent/did/ii4ZCz8LYRhax3YB39SWJcMM2hjaHT35KD
+curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didtx/recent/did/did:elastos:ii4ZCz8LYRHax3YB79SWJcMM2hjaHT35KN
 ```
 - To retrieve recent 5 DID documents published for a particular DID:
 ```
-curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/documents/did/ii4ZCz8LYRhax3YB39SWJcMM2hjaHT35KD
+curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/documents/did/did:elastos:ii4ZCz8LYRHax3YB79SWJcMM2hjaHT35KN
 ```
 - To retrieve recent 5 DID documents published for a particular DID from a cryptoname:
 ```
@@ -63,7 +63,7 @@ curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/docu
 ```
 - To retrieve service count for did_publish service for a particular DID:
 ```
-curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/service_count/did_publish/ii4ZCz8LYRhax3YB39SWJcMM2hjaHT35KD
+curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/service_count/did_publish/did:elastos:ii4ZCz8LYRHax3YB79SWJcMM2hjaHT35KN
 ```
 - To retrieve service count for all the services for all the DIDs:
 ```

@@ -18,24 +18,6 @@ from app.errors import (
 LOG = log.get_logger()
 
 
-class Collection(BaseResource):
-    """
-    Handle for endpoint: /v1/didtx
-    """
-
-    @on_exception(expo, RateLimitException, on_backoff=api_rate_limit_reached, max_tries=2)
-    @limits(calls=RATE_LIMIT_CALLS, period=RATE_LIMIT_PERIOD)
-    def on_get(self, req, res):
-        LOG.info(f'Enter /v1/didtx')
-        rows = Didtx.objects()
-        if rows:
-            obj = [each.as_dict() for each in rows]
-            self.on_success(res, obj)
-        else:
-            LOG.info(f"Error /v1/didtx")
-            raise NotFoundError()
-
-
 class ItemFromConfirmationId(BaseResource):
     """
     Handle for endpoint: /v1/didtx/confirmation_id/{confirmation_id}
@@ -154,6 +136,7 @@ class Create(BaseResource):
                 row = Didtx(
                     did=caller_did,
                     requestFrom=data["requestFrom"],
+                    didRequestDid=did_request_did,
                     didRequest=did_request,
                     memo=memo,
                     status="Pending"

@@ -28,7 +28,6 @@ class App(falcon.API):
         self.add_route("/", base.BaseResource())
         # Retrieves all the rows
 
-        self.add_route("/v1/didtx", didtx.Collection())
         # Retrieves the row according to confirmation ID
         self.add_route("/v1/didtx/confirmation_id/{confirmation_id}", didtx.ItemFromConfirmationId())
         # Retreives all rows belonging to a particular DID

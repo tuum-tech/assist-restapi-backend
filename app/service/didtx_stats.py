@@ -43,7 +43,7 @@ def api_rate_limit_reached(details):
     message3 = "Backing off {wait:0.1f} seconds after {tries} tries " \
                "calling function {target} with args {args} and kwargs " \
                "{kwargs}".format(**details)
-    LOG.info(f"Method: cron_rate_limit_reached: {message1}\n{message2}\n{message3}")
+    LOG.info(f"Method: api_rate_limit_reached: {message1}\n{message2}\n{message3}")
     slack_blocks = [
         {
             "type": "section",
