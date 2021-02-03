@@ -2,7 +2,7 @@ from decouple import config
 
 BRAND_NAME = "Assist REST API"
 
-SECRET_KEY = config('SECRET_KEY')
+SECRET_KEY = config('SECRET_KEY', default="assist-restapi-secret-key", cast=str)
 
 PRODUCTION = config('PRODUCTION', default=False, cast=bool)
 
@@ -15,11 +15,11 @@ CRON_INTERVAL = config('CRON_INTERVAL', default=100, cast=int)
 REQUEST_TIMEOUT = 30
 
 MONGO = {
-    "DATABASE": config('MONGO_DATABASE'),
-    "HOST": config('MONGO_HOST'),
+    "DATABASE": config('MONGO_DATABASE', default="assistdb", cast=str),
+    "HOST": config('MONGO_HOST', default="localhost", cast=str),
     "PORT": config('MONGO_PORT', default=27017, cast=int),
-    "USERNAME": config('MONGO_USERNAME'),
-    "PASSWORD": config('MONGO_PASSWORD')
+    "USERNAME": config('MONGO_USERNAME', default="mongoadmin", cast=str),
+    "PASSWORD": config('MONGO_PASSWORD', default="mongopass", cast=str)
 }
 if PRODUCTION:
     MONGO_CONNECT_HOST = "mongodb+srv://" + MONGO['USERNAME'] + ":" + MONGO['PASSWORD'] + "@" + \
@@ -34,7 +34,7 @@ SERVICE_STATUS_QUARANTINE = "Quarantined"
 SERVICE_STATUS_COMPLETED = "Completed"
 SERVICE_STATUS_CANCELLED = "Cancelled"
 
-DID_SIDECHAIN_RPC_URL = config('DID_SIDECHAIN_RPC_URL')
+DID_SIDECHAIN_RPC_URL = config('DID_SIDECHAIN_RPC_URL', default="http://api.elastos.io:20606", cast=str)
 
 # Service Types
 SERVICE_DIDPUBLISH = "did_publish"

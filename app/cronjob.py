@@ -167,8 +167,9 @@ def cron_send_daily_stats():
         </body>
         </html>
     """
-    send_email(to_email, subject, content_html)
-    send_slack_notification(slack_blocks)
+    if config.PRODUCTION:
+        send_email(to_email, subject, content_html)
+        send_slack_notification(slack_blocks)
     cron_reset_didpublish_daily_limit()
     LOG.info('Completed cron job: cron_send_daily_stats')
 
