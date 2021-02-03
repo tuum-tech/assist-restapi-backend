@@ -24,15 +24,22 @@ def get_didtx_count():
         {"$project": {"_id": 0, "name": "$_id", "count": "$count"}}
     ])
     for r in result_today:
-        result["today"][r["name"]] = r["count"]
+        app_name = r["name"].split("#", 1)[0]
+        if app_name in result["total"].keys():
+            result["today"][app_name] += r["count"]
+        else:
+            result["today"][app_name] = r["count"]
 
     result_total = db.didtx.aggregate([
         {"$group": {"_id": "$requestFrom", "count": {"$sum": 1}}},
         {"$project": {"_id": 0, "name": "$_id", "count": "$count"}}
     ])
-
     for r in result_total:
-        result["total"][r["name"]] = r["count"]
+        app_name = r["name"].split("#", 1)[0]
+        if app_name in result["total"].keys():
+            result["total"][app_name] += r["count"]
+        else:
+            result["total"][app_name] = r["count"]
 
     return result
 
