@@ -21,7 +21,7 @@ cp .env.example .env
 - Modify .env file with any number of wallets to use
 - [OPTIONAL]: If you want to remove previous mongodb data and start fresh, remove the mongodb directory
 ```
-rm -rf .mongodb-data
+rm -rf ~/.tuum-mongodb-data
 ```
 - Start API server
 ```
