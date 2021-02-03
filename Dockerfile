@@ -5,6 +5,7 @@ ADD requirements.txt /src/
 RUN cd /src && pip install -r requirements.txt
 
 ADD app /src/app
+ADD .env.example /src/.env
 
 WORKDIR /src
 
