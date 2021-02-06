@@ -37,10 +37,6 @@ curl http://localhost:8000
 ```
 curl -XPOST -H "Content-Type: application/json" -H "Accept: application/json" -d @test/example_did_request.json http://localhost:8000/v1/didtx/create
 ```
-- To retrieve all the transactions:
-``` 
-curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didtx
-```
 - To retrieve a particular transaction according to confirmation ID:
 ```
 curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didtx/confirmation_id/5ed561723947b48ab7edc527

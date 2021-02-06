@@ -26,16 +26,15 @@ class App(falcon.API):
 
         # Simple endpoint for base
         self.add_route("/", base.BaseResource())
-        # Retrieves all the rows
 
+        # Creates a new row
+        self.add_route("/v1/didtx/create", didtx.Create())
         # Retrieves the row according to confirmation ID
         self.add_route("/v1/didtx/confirmation_id/{confirmation_id}", didtx.ItemFromConfirmationId())
         # Retreives all rows belonging to a particular DID
         self.add_route("/v1/didtx/did/{did}", didtx.ItemFromDid())
         # Retreives recent 5 rows belonging to a particular DID
         self.add_route("/v1/didtx/recent/did/{did}", didtx.RecentItemsFromDid())
-        # Creates a new row 
-        self.add_route("/v1/didtx/create", didtx.Create())
 
         # Retrieves the last 5 DID documents published for a particular DID
         self.add_route("/v1/documents/did/{did}", did_document.GetDidDocumentsFromDid())

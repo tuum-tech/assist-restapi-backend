@@ -18,64 +18,6 @@ from app.errors import (
 LOG = log.get_logger()
 
 
-class ItemFromConfirmationId(BaseResource):
-    """
-    Handle for endpoint: /v1/didtx/confirmation_id/{confirmation_id}
-    """
-
-    @on_exception(expo, RateLimitException, on_backoff=api_rate_limit_reached, max_tries=2)
-    @limits(calls=RATE_LIMIT_CALLS, period=RATE_LIMIT_PERIOD)
-    def on_get(self, req, res, confirmation_id):
-        LOG.info(f'Enter /v1/didtx/confirmation_id/{confirmation_id}')
-        try:
-            rows = Didtx.objects(id=confirmation_id)
-            if rows:
-                row = [each.as_dict() for each in rows][0]
-                self.on_success(res, row)
-            else:
-                LOG.info(f"Error /v1/didtx/id/{confirmation_id}")
-                raise NotFoundError()
-        except Exception as e:
-            LOG.info(f"Error /v1/didtx/id/{confirmation_id}: {str(e)}")
-            raise NotFoundError()
-
-
-class ItemFromDid(BaseResource):
-    """
-    Handle for endpoint: /v1/didtx/did/{did}
-    """
-
-    @on_exception(expo, RateLimitException, on_backoff=api_rate_limit_reached, max_tries=2)
-    @limits(calls=RATE_LIMIT_CALLS, period=RATE_LIMIT_PERIOD)
-    def on_get(self, req, res, did):
-        LOG.info(f'Enter /v1/didtx/did/{did}')
-        rows = Didtx.objects(did=did.replace("did:elastos:", "").split("#")[0]).order_by('-modified')
-        if rows:
-            obj = [each.as_dict() for each in rows]
-            self.on_success(res, obj)
-        else:
-            LOG.info(f"Error /v1/didtx/did/{did}")
-            raise NotFoundError()
-
-
-class RecentItemsFromDid(BaseResource):
-    """
-    Handle for endpoint: /v1/didtx/recent/did/{did}
-    """
-
-    @on_exception(expo, RateLimitException, on_backoff=api_rate_limit_reached, max_tries=2)
-    @limits(calls=RATE_LIMIT_CALLS, period=RATE_LIMIT_PERIOD)
-    def on_get(self, req, res, did):
-        LOG.info(f'Enter /v1/didtx/recent/did/{did}')
-        rows = Didtx.objects(did=did.replace("did:elastos:", "").split("#")[0]).order_by('-modified')[:5]
-        if rows:
-            obj = [each.as_dict() for each in rows]
-            self.on_success(res, obj)
-        else:
-            LOG.info(f"Error /v1/didtx/recent/did/{did}")
-            raise NotFoundError()
-
-
 class Create(BaseResource):
     """
     Handle for endpoint: /v1/didtx/create
@@ -209,3 +151,62 @@ class Create(BaseResource):
                 data={service: service_default_count}
             )
         row.save()
+
+
+class ItemFromConfirmationId(BaseResource):
+    """
+    Handle for endpoint: /v1/didtx/confirmation_id/{confirmation_id}
+    """
+
+    @on_exception(expo, RateLimitException, on_backoff=api_rate_limit_reached, max_tries=2)
+    @limits(calls=RATE_LIMIT_CALLS, period=RATE_LIMIT_PERIOD)
+    def on_get(self, req, res, confirmation_id):
+        LOG.info(f'Enter /v1/didtx/confirmation_id/{confirmation_id}')
+        try:
+            rows = Didtx.objects(id=confirmation_id)
+            if rows:
+                row = [each.as_dict() for each in rows][0]
+                self.on_success(res, row)
+            else:
+                LOG.info(f"Error /v1/didtx/id/{confirmation_id}")
+                raise NotFoundError()
+        except Exception as e:
+            LOG.info(f"Error /v1/didtx/id/{confirmation_id}: {str(e)}")
+            raise NotFoundError()
+
+
+class ItemFromDid(BaseResource):
+    """
+    Handle for endpoint: /v1/didtx/did/{did}
+    """
+
+    @on_exception(expo, RateLimitException, on_backoff=api_rate_limit_reached, max_tries=2)
+    @limits(calls=RATE_LIMIT_CALLS, period=RATE_LIMIT_PERIOD)
+    def on_get(self, req, res, did):
+        LOG.info(f'Enter /v1/didtx/did/{did}')
+        rows = Didtx.objects(did=did.replace("did:elastos:", "").split("#")[0]).order_by('-modified')
+        if rows:
+            obj = [each.as_dict() for each in rows]
+            self.on_success(res, obj)
+        else:
+            LOG.info(f"Error /v1/didtx/did/{did}")
+            raise NotFoundError()
+
+
+class RecentItemsFromDid(BaseResource):
+    """
+    Handle for endpoint: /v1/didtx/recent/did/{did}
+    """
+
+    @on_exception(expo, RateLimitException, on_backoff=api_rate_limit_reached, max_tries=2)
+    @limits(calls=RATE_LIMIT_CALLS, period=RATE_LIMIT_PERIOD)
+    def on_get(self, req, res, did):
+        LOG.info(f'Enter /v1/didtx/recent/did/{did}')
+        rows = Didtx.objects(did=did.replace("did:elastos:", "").split("#")[0]).order_by('-modified')[:5]
+        if rows:
+            obj = [each.as_dict() for each in rows]
+            self.on_success(res, obj)
+        else:
+            LOG.info(f"Error /v1/didtx/recent/did/{did}")
+            raise NotFoundError()
+
