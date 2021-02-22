@@ -68,11 +68,15 @@ curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/serv
 
 # Deploy to production
 - Set the value of "PRODUCTION" on .env to True
-- Deploy
+- Deploy the first time
 ```
 zappa deploy prod
 ```
 - Schedule cron job
 ```
 zappa schedule prod
+```
+- Update the app
+``` 
+zappa update prod
 ```
