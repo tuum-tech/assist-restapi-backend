@@ -93,32 +93,16 @@ class Create(BaseResource):
         self.on_success(res, result)
 
     def transaction_already_sent(self, did, did_request, memo):
-        rows = Didtx.objects(did=did)
+        rows = Didtx.objects(did=did, status="Processing")
         if rows:
-            for row in rows:
-                # Only check transactions that are in Pending state
-                if row.status == "Pending":
-                    # Check if header is the same(whether create or update operation)
-                    if row.didRequest["header"] == did_request["header"]:
-                        # Check if payload is the same(the info to be published)
-                        if row.didRequest["payload"] == did_request["payload"]:
-                            # Check if memo is the same. If not, just update the row with the new memo passed
-                            if row.memo != memo:
-                                row.memo = memo
-                                row.save()
-                        else:
-                            # If payload is not the same, update the row with new didRequest
-                            row.didRequest = did_request
-                            row.save()
-                    else:
-                        # If header is not the same, update the row with new didRequest
-                        row.didRequest = did_request
-                        row.save()
-                    return row
-                # If another transaction for this DID is already Processing, return it because we
-                # don't want to create a new request without that first being processed successfully
-                elif row.status == "Processing":
-                    return row
+            return rows[0]
+        rows = Didtx.objects(did=did, status="Pending")
+        if rows:
+            row = rows[0]
+            row.memo = memo
+            row.didRequest = did_request
+            row.save()
+            return row
         return None
 
     def retrieve_service_count(self, did, service):
