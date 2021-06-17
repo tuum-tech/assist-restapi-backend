@@ -1,12 +1,7 @@
 # -*- coding: utf-8 -*-
-import binascii
-import itertools
-from logging import info
 import sys
 import json
 from datetime import datetime
-
-from pymongo import MongoClient
 
 from app import log, config
 

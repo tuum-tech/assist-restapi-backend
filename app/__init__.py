@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-import sys, os
-
 import falcon
 
 from app import log, config
@@ -21,29 +19,6 @@ from app.cronjob import cron_send_tx_to_did_sidechain, cron_update_recent_did_do
 from app.cronjobv2 import cron_send_daily_stats_v2, cron_send_tx_to_did_sidechain_v2
 
 LOG = log.get_logger()
-
-
-def override_where():
-    """ overrides certifi.core.where to return actual location of cacert.pem"""
-    # change this to match the location of cacert.pem
-    return os.path.abspath("cacert.pem")
-
-
-# is the program compiled?
-if hasattr(sys, "frozen"):
-    import certifi.core
-
-    os.environ["REQUESTS_CA_BUNDLE"] = override_where()
-    certifi.core.where = override_where
-
-    # delay importing until after where() has been replaced
-    import requests.utils
-    import requests.adapters
-
-    # replace these variables in case these modules were
-    # imported before we replaced certifi.core.where
-    requests.utils.DEFAULT_CA_BUNDLE_PATH = override_where()
-    requests.adapters.DEFAULT_CA_BUNDLE_PATH = override_where()
 
 
 class App(falcon.API):
