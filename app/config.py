@@ -40,7 +40,7 @@ DID_SIDECHAIN_RPC_URL = config('DID_SIDECHAIN_RPC_URL', default="http://api.elas
 
 DID_SIDECHAIN_RPC_URL_ETH = config('DID_SIDECHAIN_RPC_URL_ETH', default="https://api-testnet.elastos.io/newid",
                                    cast=str)
-DID_CONTRACT_ADDRESS = config('DID_CONTRACT_ADDRESS', default="0x8b2324fd40a74843711C9B48BC968A5FAEdd4Ef0", cast=str)
+DID_CONTRACT_ADDRESS = config('DID_CONTRACT_ADDRESS', default="0xdDCF19F9A52BC3c58F89C43BfB3614293F977ccA", cast=str)
 DID_CHAIN_ID = config('DID_CHAIN_ID', default=23, cast=int)
 
 # Service Types
