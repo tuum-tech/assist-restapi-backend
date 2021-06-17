@@ -101,7 +101,6 @@ def cron_send_daily_stats_v2():
         }
     })
 
-    
     for transaction in Didtx.objects(status=config.SERVICE_STATUS_QUARANTINE, version='2'):
         id = transaction.id
         did = transaction.did
@@ -178,12 +177,11 @@ def cron_send_daily_stats_v2():
     LOG.info('Completed cron job: cron_send_daily_stats')
 
 
-
 def cron_send_tx_to_did_sidechain_v2():
     LOG.info('Started cron job: send_tx_to_did_sidechain')
     # Verify the DID sidechain is reachable
     response = did_sidechain_rpc.get_block_count()
-    if not (response):
+    if not response:
         LOG.info("DID sidechain is currently not reachable...")
         return
 
@@ -234,20 +232,19 @@ def cron_send_tx_to_did_sidechain_v2():
         LOG.info(f"rows pending {len(rows_pending)}")
         dequeueIndex = didstate.lastWalletUsed
         if dequeueIndex == len(config.WALLETSV2):
-           dequeueIndex = 0
+            dequeueIndex = 0
         else:
             if dequeueIndex > 0:
-               dequeueIndex = dequeueIndex - 1
-        
+                dequeueIndex = dequeueIndex - 1
+
         wallets = deque(config.WALLETSV2)
         wallets.rotate(dequeueIndex)
 
         for wallet in wallets:
-           
 
             if len(rows_pending) == 0:
-               continue 
-            
+                continue
+
             row = rows_pending.pop()
             if not row:
                 continue
@@ -265,11 +262,11 @@ def cron_send_tx_to_did_sidechain_v2():
                 continue
 
             address = json.loads(wallet["wallet"])["address"]
-            
+
             nonce = web3_did.increment_nonce(address)
-            
+
             tx = web3_did.create_transaction(wallet["wallet"], nonce, row.didRequest)
-            
+
             if not tx:
                 continue
 
@@ -283,15 +280,13 @@ def cron_send_tx_to_did_sidechain_v2():
                 "tx": tx
             })
 
-        
-        
         if pending_transactions:
             LOG.info("Pending: Found transactions. Sending " + str(len(pending_transactions)) + " transactions to DID "
                                                                                                 "sidechain now...")
 
             # Send transaction to DID sidechain
             for pending_item in pending_transactions:
-                used_wallet = json.loads(config.WALLETSV2[pending_item["wallet_index"] -1]["wallet"])
+                used_wallet = json.loads(config.WALLETSV2[pending_item["wallet_index"] - 1]["wallet"])
                 pending = pending_item["tx"]
                 tx_response = did_sidechain_rpc.send_raw_transaction(pending)
                 if not tx_response["error"]:
@@ -307,10 +302,11 @@ def cron_send_tx_to_did_sidechain_v2():
                     LOG.info("Pending: Error sending transaction from wallet: " +
                              used_wallet["address"] + " for id: " + str(
                         row.id) + " DID:" + row.did + " Error: " + str(row.extraInfo))
-                    slack_blocks[0]["text"]["text"] = f"The following transaction was sent to quarantine at {current_time}"
+                    slack_blocks[0]["text"][
+                        "text"] = f"The following transaction was sent to quarantine at {current_time}"
                     slack_blocks[2]["text"]["text"] = f"Wallet used: {used_wallet['address']}\n" \
-                                                      f"Transaction ID: {str(row.id)}\n"  \
-                                                      f"DID: {row.did}\n"  \
+                                                      f"Transaction ID: {str(row.id)}\n" \
+                                                      f"DID: {row.did}\n" \
                                                       f"Error: {str(row.extraInfo)}"
                     send_slack_notification(slack_blocks)
                 row.save()
@@ -342,8 +338,6 @@ def cron_send_tx_to_did_sidechain_v2():
         slack_blocks[0]["text"]["text"] = f"Error while sending tx to the blockchain at {current_time}"
         slack_blocks[2]["text"]["text"] = f"Wallet used: {web3_did.wallets[web3_did.current_wallet_index]['address']}\n" \
                                           f"Error: {message}"
-        #send_slack_notification(slack_blocks)
+        # send_slack_notification(slack_blocks)
         LOG.info(f"Error while running cron job: {message}")
     LOG.info('Completed cron job: send_tx_to_did_sidechain_v2')
-
-

@@ -52,7 +52,7 @@ class Create(BaseResource):
 
         # First verify whether this is a valid payload
         did_publish = Web3DidAdapter()
-        tx = did_publish.create_transaction(config.WALLETSV2[0]["wallet"],1, did_request)
+        tx = did_publish.create_transaction(config.WALLETSV2[0]["wallet"], 1, did_request)
         if not tx:
             err_message = "Could not generate a valid transaction out of the given didRequest"
             LOG.info(f"Error /v1/didtx/create: {err_message}")
@@ -211,4 +211,3 @@ class RecentItemsFromDid(BaseResource):
         else:
             LOG.info(f"Error /v2/didtx/recent/did/{did}")
             raise NotFoundError()
-

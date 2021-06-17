@@ -11,30 +11,30 @@ import json
 
 LOG = log.get_logger()
 
+
 class Web3DidAdapter(object):
     PUBLISH_CONTRACT_ABI = [
-	{
-		"inputs": [],
-		"stateMutability": "nonpayable",
-		"payable": False,
-		"type": "constructor"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "string",
-				"name": "data",
-				"type": "string"
-			}
-		],
-		"name": "publishDidTransaction",
-		"outputs": [],
-		"stateMutability": "nonpayable",
-		"payable": False,
-		"type": "function"
-	}
-]
-
+        {
+            "inputs": [],
+            "stateMutability": "nonpayable",
+            "payable": False,
+            "type": "constructor"
+        },
+        {
+            "inputs": [
+                {
+                    "internalType": "string",
+                    "name": "data",
+                    "type": "string"
+                }
+            ],
+            "name": "publishDidTransaction",
+            "outputs": [],
+            "stateMutability": "nonpayable",
+            "payable": False,
+            "type": "function"
+        }
+    ]
 
     def __init__(self):
         self.sidechain_rpc = config.DID_SIDECHAIN_RPC_URL
@@ -42,13 +42,11 @@ class Web3DidAdapter(object):
         self.chainId = config.DID_CHAIN_ID
         self.did_sidechain_fee = 0.000001
 
-    def create_transaction(self, wallet, nonce, payload)  :
+    def create_transaction(self, wallet, nonce, payload):
         try:
             w3 = Web3(Web3.HTTPProvider(self.sidechain_rpc))
-            contract : Contract = w3.eth.contract(address=self.contract_address, abi=self.PUBLISH_CONTRACT_ABI)
+            contract: Contract = w3.eth.contract(address=self.contract_address, abi=self.PUBLISH_CONTRACT_ABI)
             pvt_key = w3.eth.account.decrypt(wallet, "password")
-            
-            
 
             if not isinstance(payload, str):
                 json_payload = json.dumps(payload)
@@ -73,7 +71,6 @@ class Web3DidAdapter(object):
             LOG.info(f"Error creating transaction: {str(e)}")
             return None
 
-
     def increment_nonce(self, wallet_address):
 
         nonce = 0
@@ -82,19 +79,12 @@ class Web3DidAdapter(object):
         if len(wallet_info) == 0:
             row = WalletInfo(address=wallet_address)
         else:
-            row = wallet_info[0]            
+            row = wallet_info[0]
             nonce = row.nonce + 1
-        
-        row.nonce= nonce
+
+        row.nonce = nonce
         row.save()
 
         LOG.info("New nonce: " + str(nonce))
 
         return nonce
-   
-         
-
-
-
-
-
