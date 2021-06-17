@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import binascii
 import itertools
+from logging import info
 import sys
 import json
 from datetime import datetime
@@ -9,22 +10,24 @@ from pymongo import MongoClient
 
 from app import log, config
 
+from collections import deque
+
 from app.model import Didtx, DidDocument, Servicecount
 from app.model import Didstate
 
-from app.service import DidPublish, DidSidechainRpc, get_service_count, get_didtx_count, send_email, \
+from app.service import Web3DidAdapter, DidSidechainRpcV2, get_service_count, get_didtx_count, send_email, \
     send_slack_notification
 
 LOG = log.get_logger()
 
-did_publish = DidPublish()
-did_sidechain_rpc = DidSidechainRpc()
+web3_did = Web3DidAdapter()
+did_sidechain_rpc = DidSidechainRpcV2()
 
 
-def cron_send_daily_stats():
-    LOG.info('Started cron job: cron_send_daily_stats')
+def cron_send_daily_stats_v2():
+    LOG.info('Started cron job: cron_send_daily_stats_v2')
     to_email = config.EMAIL["SENDER"]
-    subject = "Assist Backend Daily Stats"
+    subject = "Assist Backend Daily Stats V2"
 
     current_time = datetime.utcnow().strftime("%a, %b %d, %Y @ %I:%M:%S %p")
     slack_blocks = [
@@ -42,7 +45,7 @@ def cron_send_daily_stats():
 
     wallets_stats = "<table><tr><th>Address</th><th>Balance</th><th>Type</th></tr>"
     # Used for testing purposes
-    test_address = "EKsSQae7goc5oGGxwvgbUxkMsiQhC9ZfJ3"
+    test_address = "0xbf98b9e5d8928c6ba7f4042dcfdaa3fcd814353f"
     test_balance = did_sidechain_rpc.get_balance(test_address)
     wallets_stats += f"<tr><td>{test_address}</td><td>{test_balance}</td><td>Testing</td></tr>"
     slack_blocks.append({
@@ -52,10 +55,10 @@ def cron_send_daily_stats():
             "text": f"*Wallets and Current Balances*\n {test_address} | {test_balance} | Testing\n"
         }
     })
-    for wallet in config.WALLETS:
-        address = wallet["address"]
-        balance = did_sidechain_rpc.get_balance(address)
-        wallets_stats += f"<tr><td>{address}</td><td>{balance}</td><td>Production</td></tr>"
+    for wallet in config.WALLETSV2:
+        address = json.loads(wallet["wallet"])["address"]
+        balance = did_sidechain_rpc.get_balance(f"0x{address}")
+        wallets_stats += f"<tr><td>0x{address}</td><td>{balance}</td><td>Production</td></tr>"
         slack_blocks[2]["text"]["text"] += f"{address} | {balance} | Production\n"
     wallets_stats += "</table>"
 
@@ -97,7 +100,9 @@ def cron_send_daily_stats():
             "text": f"*Quarantined Transactions*\n"
         }
     })
-    for transaction in Didtx.objects(status=config.SERVICE_STATUS_QUARANTINE, version="1"):
+
+    
+    for transaction in Didtx.objects(status=config.SERVICE_STATUS_QUARANTINE, version='2'):
         id = transaction.id
         did = transaction.did
         request_from = transaction.requestFrom
@@ -116,7 +121,7 @@ def cron_send_daily_stats():
             "text": f"*Stale Processing Transactions(Over 1 hour)*\n"
         }
     })
-    for transaction in Didtx.objects(status=config.SERVICE_STATUS_PROCESSING, version="1"):
+    for transaction in Didtx.objects(status=config.SERVICE_STATUS_PROCESSING, version='2'):
         time_since_created = datetime.utcnow() - transaction.created
         if (time_since_created.total_seconds() / 60.0) > 60:
             id = transaction.id
@@ -170,68 +175,32 @@ def cron_send_daily_stats():
     if config.PRODUCTION:
         send_email(to_email, subject, content_html)
         send_slack_notification(slack_blocks)
-    cron_reset_didpublish_daily_limit()
     LOG.info('Completed cron job: cron_send_daily_stats')
 
 
-def cron_reset_didpublish_daily_limit():
-    LOG.info('Started cron job: reset_didpublish_daily_limit')
-    mongo_client = MongoClient(config.MONGO_CONNECT_HOST)
-    db = mongo_client.assistdb
 
-    result = db.servicecount.aggregate([
-        {"$match": {"data.did_publish.count": {"$gt": 0}}},
-        {"$group": {"_id": "$did"}},
-        {"$project": {"_id": 0, "did": "$_id"}}
-    ])
-
-    for r in result:
-        rows = Servicecount.objects(did=r["did"])
-        row = rows[0]
-        if config.SERVICE_DIDPUBLISH in row.data.keys():
-            row.data["did_publish"]["count"] = 0
-            row.save()
-    LOG.info('Completed cron job: reset_didpublish_daily_limit')
-
-
-def cron_update_recent_did_documents():
-    LOG.info('Started cron job: update_recent_did_documents')
-    rows = DidDocument.objects()
-    for row in rows:
-        time_since_last_searched = datetime.utcnow() - row.last_searched
-        # Remove DIDs from the database that no one has searched for the last 90 days
-        if (time_since_last_searched.total_seconds() / (60.0 * 60.0 * 24.0)) > 90:
-            LOG.info(f"The DID '{row.did}' has not been searched for the last 90 days. Removing from the database to "
-                     f"save some space")
-            row.delete()
-        else:
-            row.documents = did_sidechain_rpc.get_documents_specific_did(row.did)
-            row.save()
-    LOG.info('Completed cron job: update_recent_did_documents')
-
-
-def cron_send_tx_to_did_sidechain():
+def cron_send_tx_to_did_sidechain_v2():
     LOG.info('Started cron job: send_tx_to_did_sidechain')
     # Verify the DID sidechain is reachable
     response = did_sidechain_rpc.get_block_count()
-    if not (response and response["result"]):
+    if not (response):
         LOG.info("DID sidechain is currently not reachable...")
         return
 
-    current_height = response["result"] - 1
+    current_height = response - 1
     # Retrieve the current height from the database
     rows = Didstate.objects()
     if rows:
         row = rows[0]
         # Verify whether a new block has been added since last time
-        if current_height > row.currentHeight:
-            row.currentHeight = current_height
+        if current_height > row.currentHeightv2:
+            row.currentHeightv2 = current_height
             row.save()
         else:
             LOG.info("There hasn't been any new block since last cron job was run...")
             return
     else:
-        row = Didstate(currentHeight=current_height)
+        row = Didstate(currentHeight=0, currentHeightv2=current_height)
         row.save()
 
     pending_transactions = []
@@ -259,9 +228,30 @@ def cron_send_tx_to_did_sidechain():
         }
     ]
     try:
+        didstate = Didstate.objects()[0]
         # Create raw transactions
-        rows_pending = Didtx.objects(status=config.SERVICE_STATUS_PENDING, version="1")
-        for row in rows_pending:
+        rows_pending = list(Didtx.objects(status=config.SERVICE_STATUS_PENDING, version='2'))
+        LOG.info(f"rows pending {len(rows_pending)}")
+        dequeueIndex = didstate.lastWalletUsed
+        if dequeueIndex == len(config.WALLETSV2):
+           dequeueIndex = 0
+        else:
+            if dequeueIndex > 0:
+               dequeueIndex = dequeueIndex - 1
+        
+        wallets = deque(config.WALLETSV2)
+        wallets.rotate(dequeueIndex)
+
+        for wallet in wallets:
+           
+
+            if len(rows_pending) == 0:
+               continue 
+            
+            row = rows_pending.pop()
+            if not row:
+                continue
+
             time_since_created = datetime.utcnow() - row.created
             if (time_since_created.total_seconds() / 60.0) > 60:
                 LOG.info(
@@ -273,37 +263,52 @@ def cron_send_tx_to_did_sidechain():
                 }
                 row.save()
                 continue
-            tx = did_publish.create_raw_transaction(row.did, row.didRequest)
+
+            address = json.loads(wallet["wallet"])["address"]
+            
+            nonce = web3_did.increment_nonce(address)
+            
+            tx = web3_did.create_transaction(wallet["wallet"], nonce, row.didRequest)
+            
             if not tx:
                 continue
-            tx_decoded = binascii.hexlify(tx).decode(encoding="utf-8")
-            pending_transactions.append(tx_decoded)
 
+            didstate.lastWalletUsed = wallet["index"]
+            didstate.save()
+
+            LOG.info(f"Wallet no. '{wallet['index']}' used to create tx for id {row.id}")
+
+            pending_transactions.append({
+                "wallet_index": wallet["index"],
+                "tx": tx
+            })
+
+        
+        
         if pending_transactions:
             LOG.info("Pending: Found transactions. Sending " + str(len(pending_transactions)) + " transactions to DID "
                                                                                                 "sidechain now...")
+
             # Send transaction to DID sidechain
-            response = did_sidechain_rpc.send_raw_transaction(pending_transactions)
-            if not response:
-                return
-            tx_id = response["result"]
-            for row in rows_pending:
-                # If for whatever reason, the transactions fail, put them in quarantine and come back to it later
-                if tx_id:
+            for pending_item in pending_transactions:
+                used_wallet = json.loads(config.WALLETSV2[pending_item["wallet_index"] -1]["wallet"])
+                pending = pending_item["tx"]
+                tx_response = did_sidechain_rpc.send_raw_transaction(pending)
+                if not tx_response["error"]:
+                    tx_id = tx_response["tx_id"]
                     row.status = config.SERVICE_STATUS_PROCESSING
                     row.blockchainTxId = tx_id
                     LOG.info("Pending: Successfully sent transaction from wallet: " +
-                             did_publish.wallets[did_publish.current_wallet_index][
-                                 "address"] + " to the blockchain for id: " + str(
+                             used_wallet["address"] + " to the blockchain for id: " + str(
                         row.id) + " DID: " + row.did + " tx_id: " + tx_id)
                 else:
-                    row.extraInfo = response["error"]
+                    row.extraInfo = tx_response["error"]
                     row.status = config.SERVICE_STATUS_QUARANTINE
                     LOG.info("Pending: Error sending transaction from wallet: " +
-                             did_publish.wallets[did_publish.current_wallet_index]["address"] + " for id: " + str(
+                             used_wallet["address"] + " for id: " + str(
                         row.id) + " DID:" + row.did + " Error: " + str(row.extraInfo))
                     slack_blocks[0]["text"]["text"] = f"The following transaction was sent to quarantine at {current_time}"
-                    slack_blocks[2]["text"]["text"] = f"Wallet used: {did_publish.wallets[did_publish.current_wallet_index]['address']}\n" \
+                    slack_blocks[2]["text"]["text"] = f"Wallet used: {used_wallet['address']}\n" \
                                                       f"Transaction ID: {str(row.id)}\n"  \
                                                       f"DID: {row.did}\n"  \
                                                       f"Error: {str(row.extraInfo)}"
@@ -311,99 +316,34 @@ def cron_send_tx_to_did_sidechain():
                 row.save()
 
         # Get info about all the transactions and save them to the database
-        rows_processing = Didtx.objects(status=config.SERVICE_STATUS_PROCESSING, version="1")
+        rows_processing = Didtx.objects(status=config.SERVICE_STATUS_PROCESSING, version='2')
         for row in rows_processing:
             blockchain_tx = did_sidechain_rpc.get_raw_transaction(row.blockchainTxId)
+            LOG.info(blockchain_tx)
             row.blockchainTx = blockchain_tx
-            LOG.info("Processing: Blockchain transaction info from wallet: " +
-                     did_publish.wallets[did_publish.current_wallet_index]["address"] + " for id: " + str(
-                row.id) + " DID:" + row.did)
-            if blockchain_tx["result"]:
-                confirmations = blockchain_tx["result"]["confirmations"]
+            # LOG.info("Processing: Blockchain transaction info from wallet: " +
+            #          web3_did.wallets[web3_did.current_wallet_index]["address"] + " for id: " + str(
+            #     row.id) + " DID:" + row.did)
+            if blockchain_tx:
+                confirmations = int(blockchain_tx["confirmations"])
                 if confirmations > 2 and row.status != config.SERVICE_STATUS_COMPLETED:
                     row.status = config.SERVICE_STATUS_COMPLETED
-                    row.blockchainTx["result"]["confirmations"] = "2+"
+                    row.blockchainTx["confirmations"] = "2+"
             row.save()
 
         # Try to process quarantined transactions one at a time
-        rows_quarantined = Didtx.objects(status=config.SERVICE_STATUS_QUARANTINE, version="1")
-        binary_split_resend(rows_quarantined)
+        # TEMPORARY REMOVED
+        # binary_split_resend(rows_quarantined)
     except Exception as err:
         message = "Error: " + str(err) + "\n"
         exc_type, exc_obj, exc_tb = sys.exc_info()
         message += "Unexpected error: " + str(exc_type) + "\n"
         message += ' File "' + exc_tb.tb_frame.f_code.co_filename + '", line ' + str(exc_tb.tb_lineno) + "\n"
         slack_blocks[0]["text"]["text"] = f"Error while sending tx to the blockchain at {current_time}"
-        slack_blocks[2]["text"]["text"] = f"Wallet used: {did_publish.wallets[did_publish.current_wallet_index]['address']}\n" \
+        slack_blocks[2]["text"]["text"] = f"Wallet used: {web3_did.wallets[web3_did.current_wallet_index]['address']}\n" \
                                           f"Error: {message}"
-        send_slack_notification(slack_blocks)
+        #send_slack_notification(slack_blocks)
         LOG.info(f"Error while running cron job: {message}")
-    LOG.info('Completed cron job: send_tx_to_did_sidechain')
+    LOG.info('Completed cron job: send_tx_to_did_sidechain_v2')
 
 
-def binary_split_resend(rows_quarantined):
-    for row in rows_quarantined:
-        LOG.info("Binary split start: rows: " + str(row.modified))
-
-    # Split quarantined transactions into 2 sets and process each set one at a time
-    LOG.info("Binary split of " + str(len(rows_quarantined)) + " quarantined transactions")
-
-    # first create raw transactions for each
-    q_transactions = []
-    for row in rows_quarantined:
-        tx = did_publish.create_raw_transaction(row.did, row.didRequest)
-        if not tx:
-            return
-        tx_decoded = binascii.hexlify(tx).decode(encoding="utf-8")
-        q_transactions.append(tx_decoded)
-
-    # second submit 1/2 transactions then the other half
-    # Send transaction to DID sidechain
-    start = 0
-    stop = 0
-    for x in [0, 1]:
-        if x == 0:
-            start = 0
-            stop = round(len(rows_quarantined) / 2)
-            q_half_array = q_transactions[:round(len(rows_quarantined) / 2)]
-            LOG.info("Binary split in pass: " + str(x) + " from 0 to " + str(
-                round(len(rows_quarantined) / 2)) + " total array length: " + str(len(rows_quarantined)))
-        else:
-            start = round(len(q_transactions) / 2)
-            stop = len(q_transactions)
-            q_half_array = q_transactions[round(len(rows_quarantined) / 2):]
-            LOG.info(
-                "Binary split in pass: " + str(x) + " from " + str(round(len(rows_quarantined) / 2)) + " to " + str(
-                    len(rows_quarantined)) + " total array length: " + str(len(rows_quarantined)))
-
-        response = did_sidechain_rpc.send_raw_transaction(q_half_array)
-        if not response:
-            return
-        tx_id = response["result"]
-        if tx_id:
-            # If transactions are good set the status to "Processing"
-            # use itertools to pull back proper part of the original database rows collection
-            for row in itertools.islice(rows_quarantined, start, stop):
-                row.status = config.SERVICE_STATUS_PROCESSING
-                row.blockchainTxId = tx_id
-                LOG.info("Binary Split: Successfully sent transaction from wallet: " +
-                         did_publish.wallets[did_publish.current_wallet_index][
-                             "address"] + " to the blockchain for id: " + str(
-                    row.id) + " DID: " + row.did + " tx_id: " + tx_id)
-                row.save()
-        else:
-            # If the transaction failed, make sure to switch to a different wallet 
-            did_publish.current_wallet_index += 1
-            if did_publish.current_wallet_index > config.NUM_WALLETS - 1:
-                did_publish.current_wallet_index = 0
-            # if part of batch fails split send it separately
-            subset_of_rows = rows_quarantined[slice(start, stop)]
-            LOG.info("Binary split failed: on pass: " + str(x) + " start: " + str(start) + " stop: " + str(
-                stop) + " length: " + str(len(subset_of_rows)) + " of original: " + str(len(rows_quarantined)))
-
-            if len(subset_of_rows) >= 2:
-                LOG.info("Binary split IF:  start " + str(start) + " stop: " + str(stop) + " length: " + str(
-                    len(subset_of_rows)))
-                for row in subset_of_rows:
-                    LOG.info("Binary split failed: rows: " + str(row.modified))
-                binary_split_resend(subset_of_rows)

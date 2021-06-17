@@ -14,3 +14,4 @@ python-decouple==3.3
 slack-sdk==3.0.0
 ratelimit==2.2.1
 backoff==1.10.0
+web3==5.19.0

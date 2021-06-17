@@ -1,3 +1,4 @@
+import json
 from decouple import config
 
 BRAND_NAME = "Assist REST API"
@@ -11,6 +12,7 @@ LOG_LEVEL = "DEBUG"
 DEBUG = True
 
 CRON_INTERVAL = config('CRON_INTERVAL', default=100, cast=int)
+CRON_INTERVAL_V2 = config('CRON_INTERVAL_V2', default=100, cast=int)
 
 REQUEST_TIMEOUT = 30
 
@@ -34,7 +36,15 @@ SERVICE_STATUS_QUARANTINE = "Quarantined"
 SERVICE_STATUS_COMPLETED = "Completed"
 SERVICE_STATUS_CANCELLED = "Cancelled"
 
+
 DID_SIDECHAIN_RPC_URL = config('DID_SIDECHAIN_RPC_URL', default="http://api.elastos.io:20606", cast=str)
+
+DID_SIDECHAIN_RPC_URL_ETH = config('DID_SIDECHAIN_RPC_URL_ETH', default="http://api.elastos.io:20606", cast=str)
+DID_CONTRACT_ADDRESS = config('DID_CONTRACT_ADDRESS', default="0x8b2324fd40a74843711C9B48BC968A5FAEdd4Ef0", cast=str)
+DID_CHAIN_ID=config('DID_CHAIN_ID', default=23, cast=int)
+
+
+
 
 # Service Types
 SERVICE_DIDPUBLISH = "did_publish"
@@ -42,7 +52,6 @@ SERVICE_MEDIAUPLOAD = "media_upload"  # Unused service
 
 # Service Limits
 SERVICE_DIDPUBLISH_DAILY_LIMIT = config("DID_PUBLISH_DAILY_LIMIT", default=5, cast=int)
-
 
 def get_wallets():
     wallets = []
@@ -63,10 +72,28 @@ def get_wallets():
         i += 1
     return wallets
 
+def get_walletsV2():
+    wallets = []
+    i = 1
+    while True:
+        wallet = config("WALLET{0}_ETH".format(i), default=None)
+        if not wallet:
+            break
+        else:
+            wallets.append({
+                "index": i,
+                "wallet": wallet
+            })
+        i += 1
+    return wallets
+
 
 # Retrieve wallet details
 WALLETS = get_wallets()
 NUM_WALLETS = len(WALLETS)
+
+WALLETSV2 = get_walletsV2()
+NUM_WALLETSV2 = len(WALLETSV2)
 
 EMAIL = {
     "SENDER": config('EMAIL_SENDER', default="test@test.com", cast=str),
