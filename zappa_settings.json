@@ -18,6 +18,14 @@
       {
         "function": "app.cronjob.cron_send_daily_stats",
         "expression": "cron(0 0 * * ? *)"
+      },
+      {
+        "function": "app.cronjobv2.cron_send_tx_to_did_sidechain_v2",
+        "expression": "rate(5 seconds)"
+      },
+      {
+        "function": "app.cronjobv2.cron_send_daily_stats_v2",
+        "expression": "cron(0 0 * * ? *)"
       }
     ],
     "keep_warm": false,
