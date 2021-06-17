@@ -4,7 +4,7 @@ echo "Install required packages"
 case `uname` in
     Linux )
         sudo apt-get update -y 
-        sudo apt-get install build-essential python3.7 python3-dev libleveldb-dev -y
+        sudo apt-get install build-essential python3.7 python3-dev libleveldb-dev libpython3.7-dev -y
         ;;
     Darwin )
         brew update
