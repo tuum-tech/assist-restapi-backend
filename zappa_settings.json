@@ -21,7 +21,7 @@
       },
       {
         "function": "app.cronjobv2.cron_send_tx_to_did_sidechain_v2",
-        "expression": "rate(5 seconds)"
+        "expression": "rate(1 minute)"
       },
       {
         "function": "app.cronjobv2.cron_send_daily_stats_v2",
