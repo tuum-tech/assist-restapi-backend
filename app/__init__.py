@@ -75,13 +75,12 @@ application = App(middleware=[
 ])
 
 # Start cron scheduler
-if not config.PRODUCTION:
-    scheduler = BackgroundScheduler()
-    scheduler.add_job(cron_send_tx_to_did_sidechain, 'interval', seconds=config.CRON_INTERVAL)
-    scheduler.add_job(cron_update_recent_did_documents, 'interval', seconds=config.CRON_INTERVAL)
-    scheduler.add_job(cron_send_daily_stats, 'interval', seconds=config.CRON_INTERVAL)
+scheduler = BackgroundScheduler()
+scheduler.add_job(cron_send_tx_to_did_sidechain, 'interval', seconds=config.CRON_INTERVAL)
+scheduler.add_job(cron_update_recent_did_documents, 'interval', seconds=config.CRON_INTERVAL)
+scheduler.add_job(cron_send_daily_stats, 'cron', day='*', hour=0, minute=0)
 
-    scheduler.add_job(cron_send_tx_to_did_sidechain_v2, 'interval', seconds=config.CRON_INTERVAL_V2)
-    scheduler.add_job(cron_send_daily_stats_v2, 'interval', seconds=config.CRON_INTERVAL_V2)
+scheduler.add_job(cron_send_tx_to_did_sidechain_v2, 'interval', seconds=config.CRON_INTERVAL_V2)
+scheduler.add_job(cron_send_daily_stats_v2, 'cron', day='*', hour=0, minute=0)
 
-    scheduler.start()
+scheduler.start()
