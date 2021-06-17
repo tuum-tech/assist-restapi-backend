@@ -13,6 +13,7 @@ class Didtx(Document):
     extraInfo = DictField()
     blockchainTxId = StringField(max_length=128)
     blockchainTx = DictField()
+    version = StringField()
     created = DateTimeField()
     modified = DateTimeField(default=datetime.datetime.utcnow)
 
@@ -31,6 +32,7 @@ class Didtx(Document):
             "extraInfo": self.extraInfo,
             "blockchainTxId": self.blockchainTxId,
             "blockchainTx": self.blockchainTx,
+            "version": self.version if self.version else "1",
             "created": str(self.created),
             "modified": str(self.modified)
         }
