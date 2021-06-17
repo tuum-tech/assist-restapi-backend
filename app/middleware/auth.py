@@ -12,7 +12,7 @@ class AuthMiddleware(object):
             res.complete = True
             return True
 
-        if req.path == "/" or req.path == "/v1/didtx/create":
+        if req.path == "/" or req.path == "/v1/didtx/create" or req.path == "/v2/didtx/create":
             return True
 
         token = req.get_header('Authorization')
