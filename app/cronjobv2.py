@@ -178,7 +178,7 @@ def cron_send_daily_stats_v2():
 
 
 def cron_send_tx_to_did_sidechain_v2():
-    LOG.info('Started cron job: send_tx_to_did_sidechain')
+    LOG.info('Started cron job: cron_send_tx_to_did_sidechain_v2')
     # Verify the DID sidechain is reachable
     response = did_sidechain_rpc.get_block_count()
     if not response:
