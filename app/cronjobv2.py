@@ -312,9 +312,9 @@ def cron_send_tx_to_did_sidechain_v2():
             if blockchain_tx:
                 if blockchain_tx["status"] == 1:
                     confirmations = int(blockchain_tx["confirmations"])
-                    if confirmations > 2 and row.status != config.SERVICE_STATUS_COMPLETED:
+                    if confirmations > config.DID_BLOCKS_CONFIRMATION and row.status != config.SERVICE_STATUS_COMPLETED:
                         row.status = config.SERVICE_STATUS_COMPLETED
-                        row.blockchainTx["confirmations"] = "2+"
+                        row.blockchainTx["confirmations"] = f"{config.DID_BLOCKS_CONFIRMATION}+"
                 else:
                     row.status = config.SERVICE_STATUS_REJECTED
             row.save()
