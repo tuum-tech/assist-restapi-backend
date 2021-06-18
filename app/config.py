@@ -43,7 +43,7 @@ DID_SIDECHAIN_RPC_URL_ETH = config('DID_SIDECHAIN_RPC_URL_ETH', default="https:/
                                    cast=str)
 DID_CONTRACT_ADDRESS = config('DID_CONTRACT_ADDRESS', default="0xdDCF19F9A52BC3c58F89C43BfB3614293F977ccA", cast=str)
 DID_CHAIN_ID = config('DID_CHAIN_ID', default=23, cast=int)
-DID_BLOCKS_CONFIRMATION = config('DID_BLOCKS_CONFIRMATION', default=100, cast=int)
+DID_BLOCKS_CONFIRMATION = config('DID_BLOCKS_CONFIRMATION', default=2, cast=int)
 
 # Service Types
 SERVICE_DIDPUBLISH = "did_publish"
