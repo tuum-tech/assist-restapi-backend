@@ -226,15 +226,9 @@ def cron_send_tx_to_did_sidechain_v2():
         rows_pending = list(Didtx.objects(status=config.SERVICE_STATUS_PENDING, version='2'))
         LOG.info(f"rows pending {len(rows_pending)}")
         dequeueIndex = didstate.lastWalletUsed
-        if dequeueIndex == len(config.WALLETSV2):
-            dequeueIndex = 0
-        else:
-            if dequeueIndex > 0:
-                dequeueIndex = dequeueIndex - 1
-
         wallets = deque(config.WALLETSV2)
-        wallets.rotate(dequeueIndex)
-
+        if dequeueIndex < len(config.WALLETSV2):
+           wallets.rotate(dequeueIndex * -1)
         for wallet in wallets:
 
             if len(rows_pending) == 0:
@@ -316,10 +310,13 @@ def cron_send_tx_to_did_sidechain_v2():
             #          web3_did.wallets[web3_did.current_wallet_index]["address"] + " for id: " + str(
             #     row.id) + " DID:" + row.did)
             if blockchain_tx:
-                confirmations = int(blockchain_tx["confirmations"])
-                if confirmations > 2 and row.status != config.SERVICE_STATUS_COMPLETED:
-                    row.status = config.SERVICE_STATUS_COMPLETED
-                    row.blockchainTx["confirmations"] = "2+"
+                if blockchain_tx["status"] == 1:
+                    confirmations = int(blockchain_tx["confirmations"])
+                    if confirmations > 2 and row.status != config.SERVICE_STATUS_COMPLETED:
+                        row.status = config.SERVICE_STATUS_COMPLETED
+                        row.blockchainTx["confirmations"] = "2+"
+                else:
+                    row.status = config.SERVICE_STATUS_REJECTED
             row.save()
 
         # Try to process quarantined transactions one at a time

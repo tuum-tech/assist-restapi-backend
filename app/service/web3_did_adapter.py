@@ -9,6 +9,8 @@ from pymongo import MongoClient
 
 import json
 
+import requests
+
 LOG = log.get_logger()
 
 
@@ -37,7 +39,7 @@ class Web3DidAdapter(object):
     ]
 
     def __init__(self):
-        self.sidechain_rpc = config.DID_SIDECHAIN_RPC_URL
+        self.sidechain_rpc = config.DID_SIDECHAIN_RPC_URL_ETH
         self.contract_address = config.DID_CONTRACT_ADDRESS
         self.chainId = config.DID_CHAIN_ID
         self.did_sidechain_fee = 0.000001
@@ -78,6 +80,11 @@ class Web3DidAdapter(object):
 
         if len(wallet_info) == 0:
             row = WalletInfo(address=wallet_address)
+
+            w3 = Web3(Web3.HTTPProvider(self.sidechain_rpc))    
+
+            nonce = w3.eth.get_transaction_count(Web3.toChecksumAddress(f"0x{wallet_address}"))
+
         else:
             row = wallet_info[0]
             nonce = row.nonce + 1

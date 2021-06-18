@@ -78,8 +78,9 @@ class DidSidechainRpcV2(object):
             tx = w3.eth.get_transaction_receipt(txid)
             if tx:
                 status = tx.get("status")
-                currentBlock = w3.eth.get_block_number()
-                confirmations = currentBlock - tx.get("blockNumber")
+                if status == 1:
+                   currentBlock = w3.eth.get_block_number()
+                   confirmations = currentBlock - tx.get("blockNumber")
             return {
                 "status": status,
                 "confirmations": str(confirmations)
