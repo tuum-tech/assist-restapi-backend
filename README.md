@@ -9,74 +9,53 @@ cd assist-restapi-backend;
 # Prerequisites
 - Install docker at [https://docs.docker.com/get-docker/](https://docs.docker.com/get-docker/)
 - Install required packages[Only needs to be done once]
-```
-./install.sh
-```
+    ```
+    ./install.sh
+    ```
 
 # Run
 - Copy example environment file
-```
-cp .env.example .env
-```
+    ```
+    cp .env.example .env
+    ```
 - Modify .env file with any number of wallets to use
 - [OPTIONAL]: If you want to remove previous mongodb data and start fresh, remove the mongodb directory
-```
-rm -rf ~/.tuum-mongodb-data
-```
+    ```
+    rm -rf ~/.tuum-mongodb-data
+    ```
 - Start API server
-```
-./run.sh start
-```
+    ```
+    ./run.sh start
+    ```
 
 # Verify
 - To check whether the API is working:
-``` 
-curl http://localhost:8000
-```
+    ``` 
+    curl http://localhost:8000
+    ```
 - To create a transaction, run the following:
-```
-curl -XPOST -H "Content-Type: application/json" -H "Accept: application/json" -d @test/example_did_request.json http://localhost:8000/v1/didtx/create
-```
+    ```
+    curl -XPOST -H "Content-Type: application/json" -H "Accept: application/json" -d @test/example_did_request2.json http://localhost:8000/v2/didtx/create
+    ```
 - To retrieve a particular transaction according to confirmation ID:
-```
-curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didtx/confirmation_id/5ed561723947b48ab7edc527
-```
+    ```
+    curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v2/didtx/confirmation_id/5ed561723947b48ab7edc527
+    ```
 - To retrieve all transactions for a particular DID:
-```
-curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didtx/did/did:elastos:ii4ZCz8LYRHax3YB79SWJcMM2hjaHT35KN
-```
+    ```
+    curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v2/didtx/did/did:elastos:ii4ZCz8LYRHax3YB79SWJcMM2hjaHT35KN
+    ```
 - To retrieve recent 5 requests for a particular DID:
-```
-curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/didtx/recent/did/did:elastos:ii4ZCz8LYRHax3YB79SWJcMM2hjaHT35KN
-```
-- To retrieve recent 5 DID documents published for a particular DID:
-```
-curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/documents/did/did:elastos:ii4ZCz8LYRHax3YB79SWJcMM2hjaHT35KN
-```
-- To retrieve recent 5 DID documents published for a particular DID from a cryptoname:
-```
-curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/documents/crypto_name/kpwoods
-```
-- To retrieve service count for did_publish service for a particular DID:
-```
-curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/service_count/did_publish/did:elastos:ii4ZCz8LYRHax3YB79SWJcMM2hjaHT35KN
-```
-- To retrieve service count for all the services for all the DIDs:
-```
-curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v1/service_count/statistics
-```
-
-# Deploy to production
-- Set the value of "PRODUCTION" on .env to True
-- Deploy the first time
-```
-zappa deploy prod
-```
-- Schedule cron job
-```
-zappa schedule prod
-```
-- Update the app
-``` 
-zappa update prod
-```
+    ```
+    curl -H "Authorization: assist-restapi-secret-key" http://localhost:8000/v2/didtx/recent/did/did:elastos:ii4ZCz8LYRHax3YB79SWJcMM2hjaHT35KN
+    ```
+- To check the tx details:
+    ```
+    curl -XPOST -H "Content-Type: application/json" \
+    --data-raw '{
+        "jsonrpc":"2.0",
+        "method":"eth_getTransactionReceipt",
+        "params":["0x8ada66c8dfaeee7a1ce996fd28b5b5caa59d8ab92ddde4e8b6498eed46da9fd7"],
+        "id":1
+    }' https://api-testnet.elastos.io/newid
+    ```

@@ -1,17 +1,17 @@
 {
-  "did": "did:elastos:insTmxdDDuS9wHHfeYD1h5C2onEHh3D8Vq",
-  "memo": "TEST FROM BEN",
-  "requestFrom": "org.elastos.trinity.dapp.myfirstidentity.postman",
   "didRequest": {
     "header": {
       "specification": "elastos/did/1.0",
       "operation": "create"
     },
-    "payload": "eyJpZCI6ImRpZDplbGFzdG9zOmllYXFIaGN6N3dWbWtWWkx4QWFQVG9HZjJoYjlDWEFFaDMiLCJwdWJsaWNLZXkiOlt7ImlkIjoiI3ByaW1hcnkiLCJwdWJsaWNLZXlCYXNlNTgiOiJwY3NEbnlHdUY2a28ycjRSRW5rOXRmQWJ6clBwTHhQWG52QXp3MURrc1ZpZiJ9XSwiYXV0aGVudGljYXRpb24iOlsiI3ByaW1hcnkiXSwiZXhwaXJlcyI6IjIwMjYtMDEtMTRUMDY6MDI6MDBaIiwicHJvb2YiOnsiY3JlYXRlZCI6IjIwMjEtMDEtMTRUMDY6MDI6MDBaIiwic2lnbmF0dXJlVmFsdWUiOiIzREllcDdqM3ZlZ1Utd1FGakdoMGlkRFptdDNqZFFUQmRSRnZiUGM1MVFwVDJaUEpVbXpkclQ1WTY2b2FCSmx1azIwLThWVlBNU1U3bzdFZkhvbXB3QSJ9fQ",
+    "payload": "eyJpZCI6ImRpZDplbGFzdG9zOmlrOENoSExRb3pycXQxaEJ6WHEyV1NqTUZzWjlKVW94YXQiLCJwdWJsaWNLZXkiOlt7ImlkIjoiZGlkOmVsYXN0b3M6aWs4Q2hITFFvenJxdDFoQnpYcTJXU2pNRnNaOUpVb3hhdCNwcmltYXJ5IiwidHlwZSI6IkVDRFNBc2VjcDI1NnIxIiwiY29udHJvbGxlciI6ImRpZDplbGFzdG9zOmlrOENoSExRb3pycXQxaEJ6WHEyV1NqTUZzWjlKVW94YXQiLCJwdWJsaWNLZXlCYXNlNTgiOiIyNGFzUDVYQ1ptQXRGRFRkOThLajFwbVhMcHZkMTgyYUxvYng5VEd4M1hIekoifV0sImF1dGhlbnRpY2F0aW9uIjpbImRpZDplbGFzdG9zOmlrOENoSExRb3pycXQxaEJ6WHEyV1NqTUZzWjlKVW94YXQjcHJpbWFyeSJdLCJleHBpcmVzIjoiMjAyNi0wNi0xOFQxODowMzowNloiLCJwcm9vZiI6eyJ0eXBlIjoiRUNEU0FzZWNwMjU2cjEiLCJjcmVhdGVkIjoiMjAyMS0wNi0xOFQxODowMzowN1oiLCJjcmVhdG9yIjoiZGlkOmVsYXN0b3M6aWs4Q2hITFFvenJxdDFoQnpYcTJXU2pNRnNaOUpVb3hhdCNwcmltYXJ5Iiwic2lnbmF0dXJlVmFsdWUiOiIteUtmRHZyaHdWdzVfYllGTXUwUkowT1JHaXNVU3F5ek5BeTdzRGZ1dFFSNzduS0FOV012aGNRMnYxbG5DWTA0U2ZjdlozTDUyTFQ5WE8wQnZNZEVrQSJ9fQ",
     "proof": {
       "type": "ECDSAsecp256r1",
-      "verificationMethod": "did:elastos:ieaqHhcz7wVmkVZLxAaPToGf2hb9CXAEh3#primary",
-      "signature": "K8JadY3Ok3jfxWvQpA3A0qnawK_Cjl0nizy4fxCOXBYh1vwz119MxAJGn-DxQvKnrpM7dIv2XVDyCGsMaqk9Jg"
+      "verificationMethod": "did:elastos:ik8ChHLQozrqt1hBzXq2WSjMFsZ9JUoxat#primary",
+      "signature": "EJkEUzeQkJkRTkKoZXyQEuEgXcmWDJh-l7iWdZwcc0lcLdipf8ihTeDFalP-I_2TsptzAGX75hD-ny2Cz78W5g"
     }
-  }
+  },
+  "requestFrom": "DID.JS.SDK",
+  "did": "did:elastos:ik8ChHLQozrqt1hBzXq2WSjMFsZ9JUoxat#primary",
+  "memo": ""
 }
