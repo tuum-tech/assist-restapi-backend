@@ -1,8 +1,12 @@
 from toolz.itertoolz import cons
+import web3
 from web3.contract import Contract
+from web3.types import GasPriceStrategy
 from app import log, config
 from web3 import Web3
-
+from web3.middleware import geth_poa_middleware
+from web3.gas_strategies.time_based import fast_gas_price_strategy, slow_gas_price_strategy,medium_gas_price_strategy
+import statistics
 from app.model import WalletInfo
 
 from pymongo import MongoClient
@@ -47,21 +51,29 @@ class Web3DidAdapter(object):
     def create_transaction(self, wallet, nonce, payload):
         try:
             w3 = Web3(Web3.HTTPProvider(self.sidechain_rpc))
+            w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+
             contract: Contract = w3.eth.contract(address=self.contract_address, abi=self.PUBLISH_CONTRACT_ABI)
             pvt_key = w3.eth.account.decrypt(wallet, "password")
+
+            wallet_address = Web3.toChecksumAddress(f'0x{json.loads(wallet)["address"]}')
+
+            w3.eth.setGasPriceStrategy(medium_gas_price_strategy)
 
             if not isinstance(payload, str):
                 json_payload = json.dumps(payload)
             else:
                 json_payload = payload
 
+            estimated_gas = contract.functions.publishDidTransaction(json_payload).estimateGas({'from': wallet_address})
+
             cdata = contract.encodeABI(fn_name="publishDidTransaction", args=[json_payload])
 
             tx = {
                 "data": cdata,
                 "to": self.contract_address,
-                'gas': 3000000,
-                'gasPrice': w3.toWei('1', 'gwei'),
+                'gas': estimated_gas,
+                'gasPrice': w3.eth.gas_price,
                 'nonce': nonce,
                 'chainId': self.chainId
             }
@@ -73,25 +85,23 @@ class Web3DidAdapter(object):
             LOG.info(f"Error creating transaction: {str(e)}")
             return None
 
+    def estimate_gas_price(self):
+        w3 = Web3(Web3.HTTPProvider(self.sidechain_rpc))
+        pending_transactions = w3.provider.make_request("parity_pendingTransactions", [])
+        gas_prices = []
+        gases = []
+        for tx in pending_transactions["result"[:10]]:
+	        gas_prices.append(int((tx["gasPrice"]),16))
+	        gases.append(int((tx["gas"]),16))
+
+        return statistics.median(gas_prices)
+
     def increment_nonce(self, wallet_address):
 
         nonce = 0
-        wallet_info = WalletInfo.objects(address=wallet_address)
 
-        if len(wallet_info) == 0:
-            row = WalletInfo(address=wallet_address)
+        w3 = Web3(Web3.HTTPProvider(self.sidechain_rpc))
 
-            w3 = Web3(Web3.HTTPProvider(self.sidechain_rpc))    
-
-            nonce = w3.eth.get_transaction_count(Web3.toChecksumAddress(f"0x{wallet_address}"))
-
-        else:
-            row = wallet_info[0]
-            nonce = row.nonce + 1
-
-        row.nonce = nonce
-        row.save()
-
-        LOG.info("New nonce: " + str(nonce))
+        nonce = w3.eth.get_transaction_count(Web3.toChecksumAddress(f"0x{wallet_address}"))
 
         return nonce

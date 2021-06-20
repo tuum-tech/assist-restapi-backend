@@ -69,22 +69,12 @@ class DidSidechainRpcV2(object):
         return document
 
     def get_raw_transaction(self, txid):
-        LOG.info("Retrieving transaction from the DID sidechain...")
+        LOG.info(f"Retrieving transaction {txid} from the DID sidechain...")
        
         try:
             w3 = Web3(Web3.HTTPProvider(self.sidechain_rpc))
-            confirmations = 0
-            status = None
             tx = w3.eth.get_transaction_receipt(txid)
-            if tx:
-                status = tx.get("status")
-                if status == 1:
-                   currentBlock = w3.eth.get_block_number()
-                   confirmations = currentBlock - tx.get("blockNumber")
-            return {
-                "status": status,
-                "confirmations": str(confirmations)
-            }
+            return json.loads(Web3.toJSON(tx))
         except Exception as e:
             LOG.info(f"Error while getting raw transaction for a txid: {e}")
             return None

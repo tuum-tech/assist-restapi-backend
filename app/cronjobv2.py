@@ -304,17 +304,10 @@ def cron_send_tx_to_did_sidechain_v2():
         rows_processing = Didtx.objects(status=config.SERVICE_STATUS_PROCESSING, version='2')
         for row in rows_processing:
             blockchain_tx = did_sidechain_rpc.get_raw_transaction(row.blockchainTxId)
-            LOG.info(blockchain_tx)
             row.blockchainTx = blockchain_tx
-            # LOG.info("Processing: Blockchain transaction info from wallet: " +
-            #          web3_did.wallets[web3_did.current_wallet_index]["address"] + " for id: " + str(
-            #     row.id) + " DID:" + row.did)
             if blockchain_tx:
                 if blockchain_tx["status"] == 1:
-                    confirmations = int(blockchain_tx["confirmations"])
-                    if confirmations > config.DID_BLOCKS_CONFIRMATION and row.status != config.SERVICE_STATUS_COMPLETED:
-                        row.status = config.SERVICE_STATUS_COMPLETED
-                        row.blockchainTx["confirmations"] = f"{config.DID_BLOCKS_CONFIRMATION}+"
+                    row.status = config.SERVICE_STATUS_COMPLETED
                 else:
                     row.status = config.SERVICE_STATUS_REJECTED
             row.save()
