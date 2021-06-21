@@ -57,5 +57,28 @@ cd assist-restapi-backend;
         "method":"eth_getTransactionReceipt",
         "params":["0x8ada66c8dfaeee7a1ce996fd28b5b5caa59d8ab92ddde4e8b6498eed46da9fd7"],
         "id":1
-    }' https://api-testnet.elastos.io/newid
+    }' https://api.elastos.io/eid
+    ```
+- To check the balance of an address:
+    ```
+    curl -XPOST -H "Content-Type: application/json" \
+    --data-raw '{
+        "jsonrpc":"2.0",
+        "method":"eth_getBalance",
+        "params":["0xaf713191309d5e1643fcb581719f8cedd981a2f1", "latest"],
+        "id":1
+    }' https://api.elastos.io/eid
+    ```
+- To resolve DID:
+    ```
+    curl -XPOST -H "Content-Type: application/json" \
+    --data-raw '{
+        "jsonrpc":"2.0",
+        "method":"did_resolveDID",
+        "params": [{
+            "did": "ieaqHhcz7wVmkVZLxAaPToGf2hb9CXAEh3",
+            "all": false
+        }],
+        "id":1
+    }' https://api.elastos.io/eid
     ```
