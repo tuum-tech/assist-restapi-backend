@@ -12,7 +12,7 @@ LOG_LEVEL = "DEBUG"
 DEBUG = True
 
 CRON_INTERVAL = config('CRON_INTERVAL', default=100, cast=int)
-CRON_INTERVAL_V2 = config('CRON_INTERVAL_V2', default=10, cast=int)
+CRON_INTERVAL_V2 = config('CRON_INTERVAL_V2', default=8, cast=int)
 
 REQUEST_TIMEOUT = 30
 
