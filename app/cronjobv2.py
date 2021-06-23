@@ -40,7 +40,7 @@ def cron_send_daily_stats_v2():
 
     wallets_stats = "<table><tr><th>Address</th><th>Balance</th><th>Type</th></tr>"
     # Used for testing purposes
-    test_address = "0xbf98b9e5d8928c6ba7f4042dcfdaa3fcd814353f"
+    test_address = "0x365b70f14e10b02bef7e463eca6aa3e75ca3cdb1"
     test_balance = did_sidechain_rpc.get_balance(test_address)
     wallets_stats += f"<tr><td>{test_address}</td><td>{test_balance}</td><td>Testing</td></tr>"
     slack_blocks.append({
