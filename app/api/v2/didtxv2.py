@@ -52,10 +52,10 @@ class Create(BaseResource):
 
         # First verify whether this is a valid payload
         did_publish = Web3DidAdapter()
-        tx = did_publish.create_transaction(config.WALLETSV2[0]["wallet"], 1, did_request)
-        if not tx:
-            err_message = "Could not generate a valid transaction out of the given didRequest"
-            LOG.info(f"Error /v1/didtx/create: {err_message}")
+        tx, err_message = did_publish.create_transaction(config.WALLETSV2[0]["wallet"], 1, did_request)
+        if err_message:
+            err_message = f"Could not generate a valid transaction out of the given didRequest. Error Message: {err_message}"
+            LOG.info(f"Error /v2/didtx/create: {err_message}")
             raise InvalidParameterError(description=err_message)
 
         # Check the number of times this did has used the "did_publish" service
@@ -90,7 +90,7 @@ class Create(BaseResource):
                 self.add_service_count_record(did_request_did, config.SERVICE_DIDPUBLISH)
                 result["confirmation_id"] = str(row.id)
             else:
-                LOG.info(f"Error /v1/didtx/create: Daily limit reached for this DID")
+                LOG.info(f"Error /v2/didtx/create: Daily limit reached for this DID")
                 raise DailyLimitReachedError()
         self.on_success(res, result)
 

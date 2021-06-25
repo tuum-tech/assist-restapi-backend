@@ -254,9 +254,11 @@ def cron_send_tx_to_did_sidechain_v2():
 
             nonce = web3_did.increment_nonce(address)
 
-            tx = web3_did.create_transaction(wallet["wallet"], nonce, row.didRequest)
+            tx, err_message = web3_did.create_transaction(wallet["wallet"], nonce, row.didRequest)
 
-            if not tx:
+            if err_message:
+                err_message = f"Could not generate a valid transaction out of the given didRequest. Error Message: {err_message}"
+                LOG.info(f"Error: {err_message}")
                 continue
 
             didstate.lastWalletUsed = wallet["index"]

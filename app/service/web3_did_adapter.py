@@ -49,6 +49,7 @@ class Web3DidAdapter(object):
         self.did_sidechain_fee = 0.000001
 
     def create_transaction(self, wallet, nonce, payload):
+        signed_tx, err_message = None, None
         try:
             w3 = Web3(Web3.HTTPProvider(self.sidechain_rpc))
             w3.middleware_onion.inject(geth_poa_middleware, layer=0)
@@ -78,12 +79,13 @@ class Web3DidAdapter(object):
                 'chainId': self.chainId
             }
 
-            signed = w3.eth.account.sign_transaction(tx, pvt_key)
+            signed_tx = w3.eth.account.sign_transaction(tx, pvt_key)
 
-            return signed
+            return signed_tx, err_message
         except Exception as e:
             LOG.info(f"Error creating transaction: {str(e)}")
-            return None
+            err_message = str(e)
+            return signed_tx, err_message
 
     def estimate_gas_price(self):
         w3 = Web3(Web3.HTTPProvider(self.sidechain_rpc))
