@@ -345,7 +345,7 @@ def cron_send_tx_to_did_sidechain_v2():
             else:
                 row.extraInfo = err_message
                 if err_type == "TimeExhausted":
-                    if row.numTimesSent > 5:
+                    if row.numTimeout > 5:
                         row.status = config.SERVICE_STATUS_REJECTED
                         row.save()
                         LOG.info("Pending: Timeout while sending transaction from wallet: 0x" +
@@ -360,7 +360,7 @@ def cron_send_tx_to_did_sidechain_v2():
                         send_slack_notification(slack_blocks)
                     else:
                         row.status = config.SERVICE_STATUS_PROCESSING
-                        row.numTimesSent += 1
+                        row.numTimeout += 1
                 else:
                     row.status = config.SERVICE_STATUS_REJECTED
                     row.save()
