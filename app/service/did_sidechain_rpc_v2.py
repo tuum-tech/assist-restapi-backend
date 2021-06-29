@@ -1,8 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from web3.main import Web3
-from web3.types import NodeInfo
-from app.service.web3_did_adapter import Web3DidAdapter
+from web3.exceptions import TimeExhausted
 import base64
 import json
 import requests
@@ -20,15 +19,15 @@ class DidSidechainRpcV2(object):
     def get_did_from_cryptoname(self, crypto_name):
         LOG.info("Retrieving DID from cryptoname..")
         try:
-           
+
             crypto_name_url = f"https://{crypto_name}.elastos.name/did"
             response = requests.get(crypto_name_url, timeout=config.REQUEST_TIMEOUT).text
             return response
         except Exception as e:
-            LOG.info(f"Error while getting DID from cryptoname: {e}")
+            LOG.info(f"Error while getting DID from cryptoname: {str(e)}")
             return None
 
-    def get_block_count(self) -> int :
+    def get_block_count(self) -> int:
         LOG.info("Get block count...")
         try:
             w3 = Web3(Web3.HTTPProvider(self.sidechain_rpc))
@@ -36,14 +35,14 @@ class DidSidechainRpcV2(object):
             LOG.info("Actual block number: " + str(currentBlock))
             return currentBlock
         except Exception as e:
-            LOG.info(f"Error while getting block count: {e}")
+            LOG.info(f"Error while getting block count: {str(e)}")
             return None
 
     def get_balance(self, address):
         LOG.info(f"Retrieving current balance on DID sidechain for address {address}")
         balance = 0
         try:
-            w3 = Web3(Web3.HTTPProvider(self.sidechain_rpc)) 
+            w3 = Web3(Web3.HTTPProvider(self.sidechain_rpc))
             balance = int(w3.eth.get_balance(Web3.toChecksumAddress(address)))
 
         except Exception as e:
@@ -65,23 +64,49 @@ class DidSidechainRpcV2(object):
             if response and response["result"]:
                 document = response["result"]
         except Exception as e:
-            LOG.info(f"Error while resolving DID: {e}")
+            LOG.info(f"Error while resolving DID: {str(e)}")
         return document
+
+    def wait_for_transaction_receipt(self, txid):
+        LOG.info("Waiting for transaction receipt from the DID sidechain...")
+
+        try:
+            w3 = Web3(Web3.HTTPProvider(self.sidechain_rpc))
+            tx_receipt = w3.eth.wait_for_transaction_receipt(txid, timeout=30, poll_latency=0.1)
+            return {
+                "tx_receipt": json.loads(Web3.toJSON(tx_receipt)),
+                "err_type": None,
+                "err_message": None
+            }
+        except TimeExhausted as e:
+            LOG.info(f"Timed out while sending transactions to the DID sidechain: {str(e)}")
+            return {
+                "tx_receipt": {},
+                "err_type": "TimeExhausted",
+                "err_message": str(e)
+            }
+        except Exception as e:
+            LOG.info(f"Error while sending transactions to the DID sidechain: {str(e)}")
+            return {
+                "tx_receipt": {},
+                "err_type": "Exception",
+                "err_message": str(e)
+            }
 
     def get_raw_transaction(self, txid):
         LOG.info(f"Retrieving transaction {txid} from the DID sidechain...")
-       
+
         try:
             w3 = Web3(Web3.HTTPProvider(self.sidechain_rpc))
             tx = w3.eth.get_transaction_receipt(txid)
             return json.loads(Web3.toJSON(tx))
         except Exception as e:
-            LOG.info(f"Error while getting raw transaction for a txid: {e}")
+            LOG.info(f"Error while getting raw transaction for a txid: {str(e)}")
             return None
 
     def send_raw_transaction(self, signed_transaction):
         LOG.info("Sending transaction to the DID sidechain...")
-      
+
         try:
             w3 = Web3(Web3.HTTPProvider(self.sidechain_rpc))
             tx = w3.eth.send_raw_transaction(signed_transaction.rawTransaction)
@@ -89,11 +114,11 @@ class DidSidechainRpcV2(object):
                 "tx_id": tx.hex(),
                 "error": None
             }
-        except ValueError as e:
-            LOG.info(f"Error while sending transactions to the DID sidechain: {e}")
+        except Exception as e:
+            LOG.info(f"Error while sending transactions to the DID sidechain: {str(e)}")
             return {
                 "tx_id": None,
-                "error": json.loads(str(e).replace("'",'"'))
+                "error": str(e)
             }
 
     def get_documents_specific_did(self, did):
@@ -129,5 +154,3 @@ class DidSidechainRpcV2(object):
                     "verifiable_creds": verifiable_creds
                 }
         return documents
-
-    

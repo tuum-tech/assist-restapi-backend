@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+import time
+from datetime import datetime
+
 import falcon
 
 from app import log, config
@@ -15,8 +18,8 @@ from mongoengine import connect
 from app.middleware import AuthMiddleware
 from app.model import Didtx, DidDocument, Didstate
 
-from app.cronjob import cron_send_tx_to_did_sidechain, cron_update_recent_did_documents, cron_send_daily_stats
-from app.cronjobv2 import cron_send_daily_stats_v2, cron_send_tx_to_did_sidechain_v2
+from app.cronjob import cron_send_tx_to_did_sidechain
+from app.cronjobv2 import cron_send_daily_stats_v2, cron_send_tx_to_did_sidechain_v2, cron_update_recent_did_documents
 
 LOG = log.get_logger()
 
@@ -77,10 +80,9 @@ application = App(middleware=[
 # Start cron scheduler
 scheduler = BackgroundScheduler()
 scheduler.add_job(cron_send_tx_to_did_sidechain, 'interval', seconds=config.CRON_INTERVAL)
-scheduler.add_job(cron_update_recent_did_documents, 'interval', seconds=config.CRON_INTERVAL)
-scheduler.add_job(cron_send_daily_stats, 'cron', day='*', hour=0, minute=0)
 
 scheduler.add_job(cron_send_tx_to_did_sidechain_v2, 'interval', seconds=config.CRON_INTERVAL_V2)
+scheduler.add_job(cron_update_recent_did_documents, 'interval', seconds=config.CRON_INTERVAL)
 scheduler.add_job(cron_send_daily_stats_v2, 'cron', day='*', hour=0, minute=0)
 
 scheduler.start()

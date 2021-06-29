@@ -52,7 +52,7 @@ class Create(BaseResource):
 
         # First verify whether this is a valid payload
         did_publish = Web3DidAdapter()
-        tx, err_message = did_publish.create_transaction(config.WALLETSV2[0]["wallet"], 1, did_request)
+        tx, err_message = did_publish.create_transaction(config.WALLETSV2[0], 1, did_request)
         if err_message:
             err_message = f"Could not generate a valid transaction out of the given didRequest. Error Message: {err_message}"
             LOG.info(f"Error /v2/didtx/create: {err_message}")

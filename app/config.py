@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import json
+
 from decouple import config
 
 BRAND_NAME = "Assist REST API"
@@ -79,11 +81,7 @@ def get_walletsV2():
         wallet = config("WALLET{0}_ETH".format(i), default=None)
         if not wallet:
             break
-        else:
-            wallets.append({
-                "index": i,
-                "wallet": wallet
-            })
+        wallets.append(wallet)
         i += 1
     return wallets
 

@@ -1,6 +1,6 @@
 import datetime
 
-from mongoengine import StringField, DictField, DateTimeField, Document
+from mongoengine import IntField, StringField, DictField, DateTimeField, Document
 
 
 class Didtx(Document):
@@ -14,6 +14,7 @@ class Didtx(Document):
     blockchainTxId = StringField(max_length=128)
     blockchainTx = DictField()
     version = StringField()
+    numTimeout = IntField()
     created = DateTimeField()
     modified = DateTimeField(default=datetime.datetime.utcnow)
 
@@ -33,6 +34,7 @@ class Didtx(Document):
             "blockchainTxId": self.blockchainTxId,
             "blockchainTx": self.blockchainTx,
             "version": self.version if self.version else "1",
+            "numTimeout": self.numTimeout,
             "created": str(self.created),
             "modified": str(self.modified)
         }
