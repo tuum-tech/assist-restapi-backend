@@ -230,59 +230,62 @@ def process_pending_tx(wallet, row, slack_blocks, current_time):
 
 def cron_send_tx_to_did_sidechain_v2():
     LOG.info('Started cron job: cron_send_tx_to_did_sidechain_v2')
-    # Verify the DID sidechain is reachable
-    response = did_sidechain_rpc.get_block_count()
-    if not response:
-        LOG.info("DID sidechain is currently not reachable...")
-        return
-
-    current_height = response - 1
-    # Retrieve the current height from the database
-    rows = Didstate.objects()
-    if rows:
-        row = rows[0]
-        # Verify whether a new block has been added since last time
-        if current_height > row.currentHeightv2:
-            row.currentHeightv2 = current_height
-            row.save()
-        else:
-            LOG.info("There hasn't been any new block since last cron job was run...")
-            return
-    else:
-        row = Didstate(currentHeight=0, currentHeightv2=0)
-        row.save()
-        return
-
-    current_time = datetime.utcnow().strftime("%a, %b %d, %Y @ %I:%M:%S %p")
-    slack_blocks = [
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": ""
-            }
-        },
-        {
-            "type": "divider"
-        },
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": ""
-            }
-        },
-        {
-            "type": "divider"
-        }
-    ]
     try:
-        # Create raw transactions
-        rows_pending = Didtx.objects(status=config.SERVICE_STATUS_PENDING, version='2')
-        LOG.info(f"rows pending {len(rows_pending)}")
-        if len(rows_pending) == 0:
-            LOG.info('Completed cron job: send_tx_to_did_sidechain_v2')
+        # Verify the DID sidechain is reachable
+        response = did_sidechain_rpc.get_block_count()
+        if not response:
+            LOG.info("DID sidechain is currently not reachable...")
             return
+
+        rows_pending = Didtx.objects(status=config.SERVICE_STATUS_PENDING, version='2')
+        rows_processing = Didtx.objects(status=config.SERVICE_STATUS_PROCESSING, version='2')
+        LOG.info(f"rows pending {len(rows_pending)}")
+
+        current_height = response - 1
+        # Retrieve the current height from the database
+        rows = Didstate.objects()
+        if rows:
+            row = rows[0]
+            # Verify whether a new block has been added since last time
+            if current_height > row.currentHeightv2:
+                if len(rows_pending) == 0 and len(rows_processing) == 0:
+                    LOG.info('Completed cron job: send_tx_to_did_sidechain_v2')
+                    return
+                row.currentHeightv2 = current_height
+                row.save()
+            else:
+                LOG.info("There hasn't been any new block since last cron job was run...")
+                return
+        else:
+            row = Didstate(currentHeight=0, currentHeightv2=0)
+            row.save()
+            return
+
+        current_time = datetime.utcnow().strftime("%a, %b %d, %Y @ %I:%M:%S %p")
+        slack_blocks = [
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": ""
+                }
+            },
+            {
+                "type": "divider"
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": ""
+                }
+            },
+            {
+                "type": "divider"
+            }
+        ]
+
+        # Create raw transactions
         if len(rows_pending) > config.NUM_WALLETSV2:
             rows_pending = rows_pending[:config.NUM_WALLETSV2]
 
@@ -296,7 +299,6 @@ def cron_send_tx_to_did_sidechain_v2():
         for p in proc:
             p.join()
 
-        rows_processing = Didtx.objects(status=config.SERVICE_STATUS_PROCESSING, version='2')
         for row in rows_processing:
             time_since_created = datetime.utcnow() - row.created
             if (time_since_created.total_seconds() / 60.0) > 60:
