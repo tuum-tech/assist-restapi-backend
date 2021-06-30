@@ -3,7 +3,7 @@ import sys
 import json
 from datetime import datetime
 from pymongo import MongoClient
-from multiprocessing import Process
+import multiprocessing
 
 from app import log, config
 
@@ -248,17 +248,16 @@ def cron_send_tx_to_did_sidechain_v2():
         if len(rows_pending) > config.NUM_WALLETSV2:
             rows_pending = rows_pending[:config.NUM_WALLETSV2]
         wallets = config.WALLETSV2
+
         for index, row in enumerate(list(rows_pending)):
             process_pending_tx(wallets[index], row, slack_blocks, current_time)
 
         rows_processing = Didtx.objects(status=config.SERVICE_STATUS_PROCESSING, version='2')
-        proc = []
+        pool = multiprocessing.Pool()
         for row in rows_processing:
-            p = Process(target=process_processing_tx, args=(row, slack_blocks, current_time,))
-            p.start()
-            proc.append(p)
-        for p in proc:
-            p.join()
+            pool.apply_async(process_processing_tx, args=(row, slack_blocks, current_time,))
+        pool.close()
+        pool.join()
         LOG.info('Completed cron job: send_tx_to_did_sidechain_v2')
 
     except Exception as err:
