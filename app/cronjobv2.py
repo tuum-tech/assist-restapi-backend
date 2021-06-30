@@ -293,11 +293,12 @@ def cron_send_tx_to_did_sidechain_v2():
 
         proc = []
         for index, row in enumerate(list(rows_pending)):
-            p = Process(target=process_pending_tx, args=(wallets[index], row, slack_blocks, current_time,))
-            p.start()
-            proc.append(p)
-        for p in proc:
-            p.join()
+            process_pending_tx(wallets[index], row, slack_blocks, current_time)
+            #p = Process(target=process_pending_tx, args=(wallets[index], row, slack_blocks, current_time,))
+            #p.start()
+            #proc.append(p)
+        #for p in proc:
+        #    p.join()
 
         for row in rows_processing:
             time_since_created = datetime.utcnow() - row.created
