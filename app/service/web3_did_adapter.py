@@ -87,23 +87,7 @@ class Web3DidAdapter(object):
             err_message = str(e)
             return signed_tx, err_message
 
-    def estimate_gas_price(self):
-        w3 = Web3(Web3.HTTPProvider(self.sidechain_rpc))
-        pending_transactions = w3.provider.make_request("parity_pendingTransactions", [])
-        gas_prices = []
-        gases = []
-        for tx in pending_transactions["result"[:10]]:
-            gas_prices.append(int((tx["gasPrice"]), 16))
-            gases.append(int((tx["gas"]), 16))
-
-        return statistics.median(gas_prices)
-
     def increment_nonce(self, wallet_address):
-
-        nonce = 0
-
         w3 = Web3(Web3.HTTPProvider(self.sidechain_rpc))
-
         nonce = w3.eth.get_transaction_count(Web3.toChecksumAddress(f"0x{wallet_address}"))
-
         return nonce
