@@ -203,7 +203,7 @@ def process_pending_tx(wallet, row, slack_blocks, current_time):
         slack_blocks[2]["text"]["text"] = f"Wallet used: 0x{address}\n" \
                                           f"Transaction ID: {str(row.id)}\n" \
                                           f"DID: {row.did}\n" \
-                                          f"Error: {row.extraInfo}"
+                                          f"Error: {str(row.extraInfo)}"
         send_slack_notification(slack_blocks)
         return
     LOG.info(f"Wallet 0x{address} used to create tx for id {row.id}")
@@ -215,13 +215,13 @@ def process_pending_tx(wallet, row, slack_blocks, current_time):
         row.save()
         LOG.info("Pending: Error sending transaction from wallet: 0x" +
                  address + " for id: " + str(row.id) + " DID:" + row.did +
-                 " Error: " + row.extraInfo)
+                 " Error: " + str(row.extraInfo))
         slack_blocks[0]["text"][
             "text"] = f"The following transaction was rejected at {current_time}"
         slack_blocks[2]["text"]["text"] = f"Wallet used: 0x{address}\n" \
                                           f"Transaction ID: {str(row.id)}\n" \
                                           f"DID: {row.did}\n" \
-                                          f"Error: {row.extraInfo}"
+                                          f"Error: {str(row.extraInfo)}"
         send_slack_notification(slack_blocks)
         return
     row.blockchainTxId = tx_response["tx_id"]
@@ -312,7 +312,7 @@ def cron_send_tx_to_did_sidechain_v2():
                     "text"] = f"The following transaction was cancelled at {current_time}"
                 slack_blocks[2]["text"]["text"] = f"Transaction ID: {str(row.id)}\n" \
                                                   f"DID: {row.did}\n" \
-                                                  f"Error: {row.extraInfo}"
+                                                  f"Error: {str(row.extraInfo)}"
                 send_slack_notification(slack_blocks)
                 continue
 
@@ -327,7 +327,7 @@ def cron_send_tx_to_did_sidechain_v2():
                 else:
                     row.status = config.SERVICE_STATUS_REJECTED
                     LOG.info("Pending: Error sending transaction:b" + " for id: " + str(row.id) + " DID:" + row.did +
-                             " Error: " + row.extraInfo)
+                             " Error: " + str(row.extraInfo))
             else:
                 row.extraInfo = {"error": err_message}
                 if err_type == "TimeExhausted":
@@ -336,12 +336,12 @@ def cron_send_tx_to_did_sidechain_v2():
                         row.save()
                         LOG.info("Pending: Timeout while sending transaction: " +
                                  " for id: " + str(row.id) + " DID:" + row.did +
-                                 " Error: " + row.extraInfo)
+                                 " Error: " + str(row.extraInfo))
                         slack_blocks[0]["text"][
                             "text"] = f"Due to the timeout, the following transaction was rejected at {current_time}"
                         slack_blocks[2]["text"]["text"] = f"Transaction ID: {str(row.id)}\n" \
                                                           f"DID: {row.did}\n" \
-                                                          f"Error: {row.extraInfo}"
+                                                          f"Error: {str(row.extraInfo)}"
                         send_slack_notification(slack_blocks)
                     else:
                         row.status = config.SERVICE_STATUS_PROCESSING
@@ -351,12 +351,12 @@ def cron_send_tx_to_did_sidechain_v2():
                     row.save()
                     LOG.info("Pending: Error sending transaction: " +
                              " for id: " + str(row.id) + " DID:" + row.did +
-                             " Error: " + row.extraInfo)
+                             " Error: " + str(row.extraInfo))
                     slack_blocks[0]["text"][
                         "text"] = f"The following transaction was rejected at {current_time}"
                     slack_blocks[2]["text"]["text"] = f"Transaction ID: {str(row.id)}\n" \
                                                       f"DID: {row.did}\n" \
-                                                      f"Error: {row.extraInfo}"
+                                                      f"Error: {str(row.extraInfo)}"
                     send_slack_notification(slack_blocks)
             row.save()
         LOG.info('Completed cron job: send_tx_to_did_sidechain_v2')
