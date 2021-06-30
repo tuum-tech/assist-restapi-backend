@@ -21,7 +21,7 @@ did_sidechain_rpc = DidSidechainRpcV2()
 def cron_send_daily_stats_v2():
     LOG.info('Started cron job: cron_send_daily_stats_v2')
     to_email = config.EMAIL["SENDER"]
-    subject = "Assist Backend Daily Stats V2"
+    subject = "Assist Backend Daily Stats"
 
     current_time = datetime.utcnow().strftime("%a, %b %d, %Y @ %I:%M:%S %p")
     slack_blocks = [
@@ -40,7 +40,7 @@ def cron_send_daily_stats_v2():
     wallets_stats = "<table><tr><th>Address</th><th>Balance</th><th>Type</th></tr>"
     # Used for testing purposes
     test_address = "0x365b70f14e10b02bef7e463eca6aa3e75ca3cdb1"
-    test_balance = did_sidechain_rpc.get_balance(test_address)
+    test_balance = "{:.4f}".format(did_sidechain_rpc.get_balance(test_address))
     wallets_stats += f"<tr><td>{test_address}</td><td>{test_balance}</td><td>Testing</td></tr>"
     slack_blocks.append({
         "type": "section",
@@ -50,8 +50,8 @@ def cron_send_daily_stats_v2():
         }
     })
     for wallet in config.WALLETSV2:
-        address = json.loads(wallet["wallet"])["address"]
-        balance = did_sidechain_rpc.get_balance(f"0x{address}")
+        address = json.loads(wallet)["address"]
+        balance = "{:.4f}".format(did_sidechain_rpc.get_balance(f"0x{address}"))
         wallets_stats += f"<tr><td>0x{address}</td><td>{balance}</td><td>Production</td></tr>"
         slack_blocks[2]["text"]["text"] += f"{address} | {balance} | Production\n"
     wallets_stats += "</table>"
@@ -105,26 +105,6 @@ def cron_send_daily_stats_v2():
         slack_blocks[5]["text"]["text"] += f"{id} | {did} | {request_from} | {extra_info} | {created}\n"
     quarantined_transactions += "</table>"
 
-    stale_processing_transactions = "<table><tr><th>Transaction ID</th><th>DID</th><th>From</th><th>Extra " \
-                                    "Info</th><th>Created</th></tr>"
-    slack_blocks.append({
-        "type": "section",
-        "text": {
-            "type": "mrkdwn",
-            "text": f"*Stale Processing Transactions(Over 1 hour)*\n"
-        }
-    })
-    for transaction in Didtx.objects(status=config.SERVICE_STATUS_PROCESSING, version='2'):
-        time_since_created = datetime.utcnow() - transaction.created
-        if (time_since_created.total_seconds() / 60.0) > 60:
-            id = transaction.id
-            did = transaction.did
-            request_from = transaction.requestFrom
-            created = transaction.created
-            extra_info = json.dumps(transaction.extraInfo)
-            stale_processing_transactions += f"<tr><td>{id}</td><td>{did}</td><td>{request_from}</td><td>{extra_info}</td><td>{created}</td></tr>"
-            slack_blocks[6]["text"]["text"] += f"{id} | {did} | {request_from} | {extra_info} | {created}\n"
-    stale_processing_transactions += "</table>"
     slack_blocks.append({
         "type": "divider"
     })
@@ -160,8 +140,6 @@ def cron_send_daily_stats_v2():
             {didtx_stats}
             <h3>Quarantined Transactions</h3>
             {quarantined_transactions}
-            <h3>Stale Processing Transactions(Over 1 hour)</h3>
-            {stale_processing_transactions}
         </body>
         </html>
     """

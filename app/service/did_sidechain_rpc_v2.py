@@ -43,8 +43,8 @@ class DidSidechainRpcV2(object):
         balance = 0
         try:
             w3 = Web3(Web3.HTTPProvider(self.sidechain_rpc))
-            balance = int(w3.eth.get_balance(Web3.toChecksumAddress(address)))
-
+            balance = float(w3.eth.get_balance(Web3.toChecksumAddress(address)))
+            balance = balance / 1000000000000000000.0
         except Exception as e:
             LOG.info(f"Error while retrieving balance for an address: {e}")
         return balance
