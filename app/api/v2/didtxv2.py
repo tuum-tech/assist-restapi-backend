@@ -67,6 +67,7 @@ class Create(BaseResource):
         result = {}
         # Check if the row already exists with the same didRequest
         transaction_sent = self.transaction_already_sent(caller_did, did_request, memo)
+        print("transaction_sent: ", transaction_sent)
         if transaction_sent:
             result["duplicate"] = True
             result["service_count"] = count
@@ -83,15 +84,17 @@ class Create(BaseResource):
                     didRequest=did_request,
                     memo=memo,
                     version="2",
-                    status="Pending"
+                    status=config.SERVICE_STATUS_PENDING
                 )
                 row.save()
+                result["confirmation_id"] = str(row.id)
                 self.add_service_count_record(caller_did, config.SERVICE_DIDPUBLISH)
                 self.add_service_count_record(did_request_did, config.SERVICE_DIDPUBLISH)
-                result["confirmation_id"] = str(row.id)
             else:
                 LOG.info(f"Error /v2/didtx/create: Daily limit reached for this DID")
                 raise DailyLimitReachedError()
+        print("result: ", result)
+        print("row: ", row.as_dict())
         self.on_success(res, result)
 
     def transaction_already_sent(self, did, did_request, memo):
@@ -99,7 +102,7 @@ class Create(BaseResource):
         if rows:
             for row in rows:
                 # Only check transactions that are in Pending state
-                if row.status == "Pending":
+                if row.status == config.SERVICE_STATUS_PENDING:
                     # Check if header is the same(whether create or update operation)
                     if row.didRequest["header"] == did_request["header"]:
                         # Check if payload is the same(the info to be published)
@@ -119,7 +122,7 @@ class Create(BaseResource):
                     return row
                 # If another transaction for this DID is already Processing, return it because we
                 # don't want to create a new request without that first being processed successfully
-                elif row.status == "Processing":
+                elif row.status == config.SERVICE_STATUS_PROCESSING:
                     return row
         return None
 

@@ -255,6 +255,7 @@ def cron_send_tx_to_did_sidechain_v2():
         rows_processing = Didtx.objects(status=config.SERVICE_STATUS_PROCESSING, version='2')
         pool = multiprocessing.Pool()
         for row in rows_processing:
+            #process_processing_tx(row, slack_blocks, current_time)
             pool.apply_async(process_processing_tx, args=(row, slack_blocks, current_time,))
         pool.close()
         pool.join()
