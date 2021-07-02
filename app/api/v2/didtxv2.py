@@ -67,7 +67,6 @@ class Create(BaseResource):
         result = {}
         # Check if the row already exists with the same didRequest
         transaction_sent = self.transaction_already_sent(caller_did, did_request, memo)
-        print("transaction_sent: ", transaction_sent)
         if transaction_sent:
             result["duplicate"] = True
             result["service_count"] = count
@@ -93,8 +92,6 @@ class Create(BaseResource):
             else:
                 LOG.info(f"Error /v2/didtx/create: Daily limit reached for this DID")
                 raise DailyLimitReachedError()
-        print("result: ", result)
-        print("row: ", row.as_dict())
         self.on_success(res, result)
 
     def transaction_already_sent(self, did, did_request, memo):

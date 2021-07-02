@@ -253,12 +253,12 @@ def cron_send_tx_to_did_sidechain_v2():
             process_pending_tx(wallets[index], row, slack_blocks, current_time)
 
         rows_processing = Didtx.objects(status=config.SERVICE_STATUS_PROCESSING, version='2')
-        pool = multiprocessing.Pool()
+        #pool = multiprocessing.Pool()
         for row in rows_processing:
-            #process_processing_tx(row, slack_blocks, current_time)
-            pool.apply_async(process_processing_tx, args=(row, slack_blocks, current_time,))
-        pool.close()
-        pool.join()
+            process_processing_tx(row, slack_blocks, current_time)
+            #pool.apply_async(process_processing_tx, args=(row, slack_blocks, current_time,))
+        #pool.close()
+        #pool.join()
         LOG.info('Completed cron job: send_tx_to_did_sidechain_v2')
 
     except Exception as err:
@@ -274,6 +274,7 @@ def cron_send_tx_to_did_sidechain_v2():
 
 def process_pending_tx(wallet, row, slack_blocks, current_time):
     address = json.loads(wallet)["address"]
+    row.walletUsed = f"0x{address}"
 
     nonce = web3_did.increment_nonce(address)
     tx, err_message = web3_did.create_transaction(wallet, nonce, row.didRequest)

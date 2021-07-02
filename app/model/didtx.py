@@ -15,6 +15,7 @@ class Didtx(Document):
     blockchainTx = DictField()
     version = StringField()
     numTimeout = IntField()
+    walletUsed = StringField()
     created = DateTimeField()
     modified = DateTimeField(default=datetime.datetime.utcnow)
 
@@ -35,6 +36,7 @@ class Didtx(Document):
             "blockchainTx": self.blockchainTx,
             "version": self.version if self.version else "1",
             "numTimeout": self.numTimeout,
+            "walletUsed": self.walletUsed if self.walletUsed else "",
             "created": str(self.created),
             "modified": str(self.modified)
         }
