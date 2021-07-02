@@ -3,6 +3,7 @@ import sys
 import json
 from datetime import datetime
 from pymongo import MongoClient
+from bson import ObjectId
 import multiprocessing
 
 from app import log, config
@@ -253,12 +254,13 @@ def cron_send_tx_to_did_sidechain_v2():
             process_pending_tx(wallets[index], row, slack_blocks, current_time)
 
         rows_processing = Didtx.objects(status=config.SERVICE_STATUS_PROCESSING, version='2')
-        #pool = multiprocessing.Pool()
+        LOG.info(f"rows processing {len(rows_processing)}")
+        pool = multiprocessing.Pool()
         for row in rows_processing:
-            process_processing_tx(row, slack_blocks, current_time)
-            #pool.apply_async(process_processing_tx, args=(row, slack_blocks, current_time,))
-        #pool.close()
-        #pool.join()
+            #process_processing_tx(row.id, slack_blocks, current_time)
+            pool.apply_async(process_processing_tx, args=(row.id, slack_blocks, current_time,))
+        pool.close()
+        pool.join()
         LOG.info('Completed cron job: send_tx_to_did_sidechain_v2')
 
     except Exception as err:
@@ -315,66 +317,81 @@ def process_pending_tx(wallet, row, slack_blocks, current_time):
     row.save()
 
 
-def process_processing_tx(row, slack_blocks, current_time):
-    time_since_created = datetime.utcnow() - row.created
+def process_processing_tx(row_id, slack_blocks, current_time):
+    mongo_client = MongoClient(config.MONGO_CONNECT_HOST)
+    db = mongo_client.assistdb
+    col = db["didtx"]
+    filter_info = {
+        "_id": row_id
+    }
+    update_info = {
+        "$set": {}
+    }
+    row = col.find_one(filter_info)
+    time_since_created = datetime.utcnow() - row["created"]
     if (time_since_created.total_seconds() / 60.0) > 60:
         LOG.info(
-            f"The id '{row.id}' with DID '{row.did}' has been in Pending/Processing state for the last hour. "
+            f"The id '{str(row['id'])}' with DID '{row['did']}' has been in Pending/Processing state for the last hour. "
             f"Changing its state to Cancelled")
-        row.status = config.SERVICE_STATUS_CANCELLED
-        row.extraInfo = {
-            "error": "Was in pending state for more than 1 hour"
+        error = "Was in pending state for more than 1 hour"
+        update_info["$set"]["status"] = config.SERVICE_STATUS_CANCELLED
+        update_info["$set"]["extraInfo"] = {
+            "error": error
         }
-        row.save()
+        col.update_one(filter_info, update_info, update=True)
         slack_blocks[0]["text"][
             "text"] = f"The following transaction was cancelled at {current_time}"
-        slack_blocks[2]["text"]["text"] = f"Transaction ID: {str(row.id)}\n" \
-                                          f"DID: {row.did}\n" \
-                                          f"Error: {str(row.extraInfo)}"
+        slack_blocks[2]["text"]["text"] = f"Transaction ID: {str(row['id'])}\n" \
+                                          f"DID: {row['did']}\n" \
+                                          f"Error: {error}"
         send_slack_notification(slack_blocks)
         return
 
-    result = did_sidechain_rpc.wait_for_transaction_receipt(row.blockchainTxId)
+    result = did_sidechain_rpc.wait_for_transaction_receipt(row['blockchainTxId'])
     tx_receipt, err_type, err_message = result["tx_receipt"], result["err_type"], result["err_message"]
     if tx_receipt:
-        row.blockchainTx = tx_receipt
+        update_info["$set"]["blockchainTx"] = tx_receipt
         if "status" in tx_receipt.keys() and tx_receipt["status"] == 1:
-            row.status = config.SERVICE_STATUS_COMPLETED
-            row.extraInfo = {}
-            row.numTimeout = 0
+            update_info["$set"]["status"] = config.SERVICE_STATUS_COMPLETED
+            update_info["$set"]["extraInfo"] = {}
+            update_info["$set"]["numTimeout"] = 0
         else:
-            row.status = config.SERVICE_STATUS_REJECTED
-            LOG.info("Pending: Error sending transaction:b" + " for id: " + str(row.id) + " DID:" + row.did +
-                     " Error: " + str(row.extraInfo))
+            update_info["$set"]["status"] = config.SERVICE_STATUS_REJECTED
+            LOG.info("Pending: Error sending transaction:b" + " for id: " + str(row['id']) + " DID:" + row['did'] +
+                     " Error: " + str(row['extraInfo']))
     else:
-        row.extraInfo = {"error": err_message}
+        error = err_message
+        update_info["$set"]["extraInfo"] = {
+            "error": error
+        }
         if err_type == "TimeExhausted":
-            if row.numTimeout > 5:
-                row.status = config.SERVICE_STATUS_REJECTED
-                row.save()
+            if row['numTimeout'] > 5:
+                update_info["$set"]["status"] = config.SERVICE_STATUS_REJECTED
+                col.update_one(filter_info, update_info, update=True)
                 LOG.info("Pending: Timeout while sending transaction: " +
-                         " for id: " + str(row.id) + " DID:" + row.did +
-                         " Error: " + str(row.extraInfo))
+                         " for id: " + str(row['id']) + " DID:" + row['did'] +
+                         " Error: " + error)
                 slack_blocks[0]["text"][
                     "text"] = f"Due to the timeout, the following transaction was rejected at {current_time}"
-                slack_blocks[2]["text"]["text"] = f"Transaction ID: {str(row.id)}\n" \
-                                                  f"DID: {row.did}\n" \
-                                                  f"Error: {str(row.extraInfo)}"
+                slack_blocks[2]["text"]["text"] = f"Transaction ID: {str(row['id'])}\n" \
+                                                  f"DID: {row['did']}\n" \
+                                                  f"Error: {error}"
                 send_slack_notification(slack_blocks)
             else:
-                row.status = config.SERVICE_STATUS_PROCESSING
-                row.numTimeout += 1
+                update_info["$set"]["status"] = config.SERVICE_STATUS_PROCESSING
+                update_info["$set"]["numTimeout"] = row['numTimeout'] + 1
         else:
-            row.status = config.SERVICE_STATUS_REJECTED
-            row.save()
+            update_info["$set"]["status"] = config.SERVICE_STATUS_REJECTED
+            col.update_one(filter_info, update_info, update=True)
             LOG.info("Pending: Error sending transaction: " +
-                     " for id: " + str(row.id) + " DID:" + row.did +
-                     " Error: " + str(row.extraInfo))
+                     " for id: " + str(row['id']) + " DID:" + row['did'] +
+                     " Error: " + error)
             slack_blocks[0]["text"][
                 "text"] = f"The following transaction was rejected at {current_time}"
-            slack_blocks[2]["text"]["text"] = f"Transaction ID: {str(row.id)}\n" \
-                                              f"DID: {row.did}\n" \
-                                              f"Error: {str(row.extraInfo)}"
+            slack_blocks[2]["text"]["text"] = f"Transaction ID: {str(row['id'])}\n" \
+                                              f"DID: {row['did']}\n" \
+                                              f"Error: {error}"
             send_slack_notification(slack_blocks)
-    row.save()
+    col.update_one(filter_info, update_info)
+
 
