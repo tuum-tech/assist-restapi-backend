@@ -189,6 +189,7 @@ def cron_update_recent_did_documents():
 
 
 def cron_send_tx_to_did_sidechain_v2():
+    current_time = datetime.utcnow().strftime("%a, %b %d, %Y @ %I:%M:%S %p")
     LOG.info('Started cron job: cron_send_tx_to_did_sidechain_v2')
     try:
         # Verify the DID sidechain is reachable
@@ -221,7 +222,6 @@ def cron_send_tx_to_did_sidechain_v2():
             row.save()
             return
 
-        current_time = datetime.utcnow().strftime("%a, %b %d, %Y @ %I:%M:%S %p")
         slack_blocks = [
             {
                 "type": "section",
