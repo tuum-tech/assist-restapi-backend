@@ -66,7 +66,13 @@ class Web3DidAdapter(object):
             else:
                 json_payload = payload
 
+            LOG.info(f"create_transaction: json_payload size: {len(json_payload)}")
+            LOG.info(f"json_payload: {json_payload}")
+            LOG.info(f"create_transaction: using wallet: {wallet_address}")
+
             estimated_gas = contract.functions.publishDidTransaction(json_payload).estimateGas({'from': wallet_address})
+
+            LOG.info(f"create_transaction: gas: {estimated_gas}")
 
             cdata = contract.encodeABI(fn_name="publishDidTransaction", args=[json_payload])
 
