@@ -3,7 +3,6 @@ import sys
 import json
 from datetime import datetime
 from pymongo import MongoClient
-from bson import ObjectId
 import multiprocessing
 
 from app import log, config
@@ -24,6 +23,8 @@ def cron_send_daily_stats_v2():
     LOG.info('Started cron job: cron_send_daily_stats_v2')
     to_email = config.EMAIL["SENDER"]
     subject = "Assist Backend Daily Stats"
+    if config.NETWORK == "testnet":
+        subject = "Assist Backend Daily Stats - Testnet"
 
     current_time = datetime.utcnow().strftime("%a, %b %d, %Y @ %I:%M:%S %p")
     slack_blocks = [
