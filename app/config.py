@@ -9,6 +9,8 @@ SECRET_KEY = config('SECRET_KEY', default="assist-restapi-secret-key", cast=str)
 
 PRODUCTION = config('PRODUCTION', default=False, cast=bool)
 
+NETWORK = config('NETWORK', default="mainnet", cast=str)
+
 LOG_LEVEL = "DEBUG"
 
 DEBUG = True
@@ -25,6 +27,9 @@ MONGO = {
     "USERNAME": config('MONGO_USERNAME', default="mongoadmin", cast=str),
     "PASSWORD": config('MONGO_PASSWORD', default="mongopass", cast=str)
 }
+if NETWORK == "testnet":
+    MONGO["DATABASE"] = "assistdb-testnet"
+
 if PRODUCTION:
     MONGO_CONNECT_HOST = "mongodb+srv://" + MONGO['USERNAME'] + ":" + MONGO['PASSWORD'] + "@" + \
                          MONGO['HOST'] + "/?retryWrites=true&w=majority"

@@ -8,7 +8,7 @@ from app import config
 
 def get_service_count():
     mongo_client = MongoClient(config.MONGO_CONNECT_HOST)
-    db = mongo_client.assistdb
+    db = mongo_client.get_database(config.MONGO["DATABASE"])
 
     result = {
         "did_publish": {}

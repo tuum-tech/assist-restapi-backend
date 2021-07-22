@@ -155,7 +155,7 @@ def cron_send_daily_stats_v2():
 def cron_reset_didpublish_daily_limit():
     LOG.info('Started cron job: reset_didpublish_daily_limit')
     mongo_client = MongoClient(config.MONGO_CONNECT_HOST)
-    db = mongo_client.assistdb
+    db = mongo_client.get_database(config.MONGO["DATABASE"])
 
     result = db.servicecount.aggregate([
         {"$match": {"data.did_publish.count": {"$gt": 0}}},
@@ -257,7 +257,6 @@ def cron_send_tx_to_did_sidechain_v2():
         LOG.info(f"rows processing {len(rows_processing)}")
         pool = multiprocessing.Pool()
         for row in rows_processing:
-            #process_processing_tx(row.id, slack_blocks, current_time)
             pool.apply_async(process_processing_tx, args=(row.id, slack_blocks, current_time,))
         pool.close()
         pool.join()
@@ -319,7 +318,7 @@ def process_pending_tx(wallet, row, slack_blocks, current_time):
 
 def process_processing_tx(row_id, slack_blocks, current_time):
     mongo_client = MongoClient(config.MONGO_CONNECT_HOST)
-    db = mongo_client.assistdb
+    db = mongo_client.get_database(config.MONGO["DATABASE"])
     col = db["didtx"]
     filter_info = {
         "_id": row_id
@@ -327,12 +326,8 @@ def process_processing_tx(row_id, slack_blocks, current_time):
     update_info = {
         "$set": {}
     }
-    LOG.info(f"process_processing_tx: 1, filter_info: {filter_info}")
     row = col.find_one(filter_info)
-    LOG.info(f"process_processing_tx: 2, {row}")
-    LOG.info(f"process_processing_tx: 3, {row['created']}")
     time_since_created = datetime.utcnow() - row["created"]
-    LOG.info(f"process_processing_tx: 4, {time_since_created}")
     if (time_since_created.total_seconds() / 60.0) > 60:
         LOG.info(
             f"The id '{str(row['id'])}' with DID '{row['did']}' has been in Pending/Processing state for the last hour. "
@@ -351,9 +346,7 @@ def process_processing_tx(row_id, slack_blocks, current_time):
         send_slack_notification(slack_blocks)
         return
 
-    LOG.info(f"process_processing_tx: 5")
     result = did_sidechain_rpc.wait_for_transaction_receipt(row['blockchainTxId'])
-    LOG.info(f"process_processing_tx: result: {result}")
     tx_receipt, err_type, err_message = result["tx_receipt"], result["err_type"], result["err_message"]
     if tx_receipt:
         update_info["$set"]["blockchainTx"] = tx_receipt
