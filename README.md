@@ -59,7 +59,7 @@ cd assist-restapi-backend;
   --data-raw '{
       "jsonrpc":"2.0",
       "method":"eth_getTransactionReceipt",
-      "params":["0xb4ec945c1cc0ad62397ed4cb2c0feccdf2928ec0c3c7054d378286f8e4b3c5ba"],
+      "params":["0x3c149cecb180eb911196d31582dbc598f10399c799216b32cdf45216926b09b0"],
       "id":1
   }' https://api.elastos.io/eid
   ```

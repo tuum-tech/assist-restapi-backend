@@ -328,25 +328,6 @@ def process_processing_tx(row_id, slack_blocks, current_time):
         "$set": {}
     }
     row = col.find_one(filter_info)
-    time_since_created = datetime.utcnow() - row["created"]
-    if (time_since_created.total_seconds() / 60.0) > 60:
-        LOG.info(
-            f"The id '{str(row['id'])}' with DID '{row['did']}' has been in Pending/Processing state for the last hour. "
-            f"Changing its state to Cancelled")
-        error = "Was in pending state for more than 1 hour"
-        update_info["$set"]["status"] = config.SERVICE_STATUS_CANCELLED
-        update_info["$set"]["extraInfo"] = {
-            "error": error
-        }
-        col.update_one(filter_info, update_info, update=True)
-        slack_blocks[0]["text"][
-            "text"] = f"The following transaction was cancelled at {current_time}"
-        slack_blocks[2]["text"]["text"] = f"Transaction ID: {str(row['id'])}\n" \
-                                          f"DID: {row['did']}\n" \
-                                          f"Error: {error}"
-        send_slack_notification(slack_blocks)
-        return
-
     result = did_sidechain_rpc.wait_for_transaction_receipt(row['blockchainTxId'])
     tx_receipt, err_type, err_message = result["tx_receipt"], result["err_type"], result["err_message"]
     if tx_receipt:
@@ -367,7 +348,7 @@ def process_processing_tx(row_id, slack_blocks, current_time):
         if err_type == "TimeExhausted":
             if row['numTimeout'] > 5:
                 update_info["$set"]["status"] = config.SERVICE_STATUS_REJECTED
-                col.update_one(filter_info, update_info, update=True)
+                col.update_one(filter_info, update_info)
                 LOG.info("Pending: Timeout while sending transaction: " +
                          " for id: " + str(row['id']) + " DID:" + row['did'] +
                          " Error: " + error)
@@ -382,7 +363,7 @@ def process_processing_tx(row_id, slack_blocks, current_time):
                 update_info["$set"]["numTimeout"] = row['numTimeout'] + 1
         else:
             update_info["$set"]["status"] = config.SERVICE_STATUS_REJECTED
-            col.update_one(filter_info, update_info, update=True)
+            col.update_one(filter_info, update_info)
             LOG.info("Pending: Error sending transaction: " +
                      " for id: " + str(row['id']) + " DID:" + row['did'] +
                      " Error: " + error)
