@@ -79,7 +79,7 @@ application = App(middleware=[
 
 # Start cron scheduler
 scheduler = BackgroundScheduler()
-scheduler.add_job(cron_send_tx_to_did_sidechain, 'interval', seconds=config.CRON_INTERVAL)
+#scheduler.add_job(cron_send_tx_to_did_sidechain, 'interval', seconds=config.CRON_INTERVAL)
 
 scheduler.add_job(cron_send_tx_to_did_sidechain_v2, 'interval', seconds=config.CRON_INTERVAL_V2)
 scheduler.add_job(cron_update_recent_did_documents, 'interval', seconds=config.CRON_INTERVAL)
