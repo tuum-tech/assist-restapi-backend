@@ -8,7 +8,7 @@ ecdsa==0.15
 electrumX==1.14.0
 pymongo[srv]==3.10.1
 mongoengine==0.20.0
-PyJWT==1.7.1
+PyJWT==2.4.0
 APScheduler==3.6.3
 python-decouple==3.3
 slack-sdk==3.0.0
